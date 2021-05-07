@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+<title>配置 SpringBoot, 应用配置如何被加载</title>
+<style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+</style>
+<style>
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+  position: relative; left: -1em; text-align: right; vertical-align: baseline;
+  border: none; display: inline-block;
+  -webkit-touch-callout: none; -webkit-user-select: none;
+  -khtml-user-select: none; -moz-user-select: none;
+  -ms-user-select: none; user-select: none;
+  padding: 0 4px; width: 4em;
+  background-color: #232629;
+  color: #7a7c7d;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #7a7c7d;  padding-left: 4px; }
+div.sourceCode
+{ color: #cfcfc2; background-color: #232629; }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span { color: #cfcfc2; } /* Normal */
+code span.al { color: #95da4c; background-color: #4d1f24; font-weight: bold; } /* Alert */
+code span.an { color: #3f8058; } /* Annotation */
+code span.at { color: #2980b9; } /* Attribute */
+code span.bn { color: #f67400; } /* BaseN */
+code span.bu { color: #7f8c8d; } /* BuiltIn */
+code span.cf { color: #fdbc4b; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #3daee9; } /* Char */
+code span.cn { color: #27aeae; font-weight: bold; } /* Constant */
+code span.co { color: #7a7c7d; } /* Comment */
+code span.cv { color: #7f8c8d; } /* CommentVar */
+code span.do { color: #a43340; } /* Documentation */
+code span.dt { color: #2980b9; } /* DataType */
+code span.dv { color: #f67400; } /* DecVal */
+code span.er { color: #da4453; text-decoration: underline; } /* Error */
+code span.ex { color: #0099ff; font-weight: bold; } /* Extension */
+code span.fl { color: #f67400; } /* Float */
+code span.fu { color: #8e44ad; } /* Function */
+code span.im { color: #27ae60; } /* Import */
+code span.in { color: #c45b00; } /* Information */
+code span.kw { color: #cfcfc2; font-weight: bold; } /* Keyword */
+code span.op { color: #cfcfc2; } /* Operator */
+code span.ot { color: #27ae60; } /* Other */
+code span.pp { color: #27ae60; } /* Preprocessor */
+code span.re { color: #2980b9; background-color: #153042; } /* RegionMarker */
+code span.sc { color: #3daee9; } /* SpecialChar */
+code span.ss { color: #da4453; } /* SpecialString */
+code span.st { color: #f44f4f; } /* String */
+code span.va { color: #27aeae; } /* Variable */
+code span.vs { color: #da4453; } /* VerbatimString */
+code span.wa { color: #da4453; } /* Warning */
+</style>
+<!--[if lt IE 9]>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+<![endif]-->
+<link rel="stylesheet" href="/assets/main.css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-F2PYD8JK1Z"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-F2PYD8JK1Z');
+</script>
+</head>
+<body>
+<header class="site-header" role="banner">
+<div class="wrapper">
+  <a class="site-title" href="/">孤星可</a>
+
+  <nav><ul class="nav-list clearfix">
+    <li class="nav-item"><a href="/" alt="首页" title="首页">首页</a></li>
+    <li class="nav-item"><a href="/wiki/index.html" alt="Wiki" title="Wiki">Wiki</a></li>
+    <li class="nav-item"><a href="/page/about.html" alt="关于" title="关于">关于</a></li>
+  </ul></nav>
+
+  <span class="site-desc">人生天地间 忽如远行客</span>
+</div>
+</header>
+
+<main class="page-content" aria-label="Content">
+<div class="wrapper">
+<div class="post">
+<h3 class="post-title">配置 SpringBoot, 应用配置如何被加载</h3>
+<div class="post-date"><span>最后修改时间<span> 2018-12-18</div>
+<div class="post-meta">
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#先看源码">先看源码</a>
+<ul>
+<li><a href="#核心代码就一行">核心代码就一行</a></li>
+<li><a href="#深入看看">深入看看</a></li>
+</ul></li>
+<li><a href="#确定方案">确定方案</a></li>
+<li><a href="#落地">落地</a></li>
+<li><a href="#问题解答">问题解答</a></li>
+<li><a href="#ref">REF</a></li>
+</ul>
+</nav>
+</div>
+<div class="post-content">
+<blockquote>
+<p>源码之下,没有秘密.</p>
+</blockquote>
+<hr />
+<p>接上篇, 探索如何解决保证自定义配置能被加载,并且兼容 springboot 默认所有配置.</p>
+<p>回答上篇留下的几个问题</p>
+<ul>
+<li>有没有更优雅的解决此问题的方法?</li>
+<li>为何 Spring Boot 的配置文件加载顺序是这般定义?</li>
+<li>Spring Boot 加载配置是如何实现的?</li>
+<li>Spring Cloud Config 等配置中心的配置是如何结合到具体应用中的?</li>
+<li>Spring Cloud Config 等配置中心的配置支持日志系统配置文件位置的配置吗?</li>
+</ul>
+<h2 id="先看源码">先看源码</h2>
+<h3 id="核心代码就一行">核心代码就一行</h3>
+<div class="sourceCode" id="cb1"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>ConfigurableEnvironment environment = <span class="fu">prepareEnvironment</span>(listeners, applicationArguments);</span></code></pre></div>
+<p>Spring Boot 2.0.4 版, org.springframework.boot.SpringApplication line: 320</p>
+<p>为什么核心就此一行</p>
+<p>在此行代码执行之前, environment 不出意外是没有初始化的(后文解释).</p>
+<p>在此行代码执行之后, environment 正式创建完毕. 在此之后继续加载配置文件, 有些配置属性是不生效的, 比如 spring.profiles.active.</p>
+<h3 id="深入看看">深入看看</h3>
+<div class="sourceCode" id="cb2"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">private</span> ConfigurableEnvironment <span class="fu">prepareEnvironment</span>(</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>        SpringApplicationRunListeners listeners,</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>        ApplicationArguments applicationArguments) {</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Create and configure the environment</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    ConfigurableEnvironment environment = <span class="fu">getOrCreateEnvironment</span>();  <span class="co">// 1</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">configureEnvironment</span>(environment, applicationArguments.<span class="fu">getSourceArgs</span>()); <span class="co">// 2 </span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    listeners.<span class="fu">environmentPrepared</span>(environment); <span class="co">// 3</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">bindToSpringApplication</span>(environment);</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    <span class="kw">if</span> (<span class="kw">this</span>.<span class="fu">webApplicationType</span> == WebApplicationType.<span class="fu">NONE</span>) {</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>        environment = <span class="kw">new</span> <span class="fu">EnvironmentConverter</span>(<span class="fu">getClassLoader</span>())</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>                .<span class="fu">convertToStandardEnvironmentIfNecessary</span>(environment);</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>    ConfigurationPropertySources.<span class="fu">attach</span>(environment);</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>    <span class="kw">return</span> environment;</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>核心关注点就方法前两行.</p>
+<h4 id="getorcreateenvironment">getOrCreateEnvironment</h4>
+<div class="sourceCode" id="cb3"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">private</span> ConfigurableEnvironment <span class="fu">getOrCreateEnvironment</span>() {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">if</span> (<span class="kw">this</span>.<span class="fu">environment</span> != <span class="kw">null</span>) {</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>        <span class="kw">return</span> <span class="kw">this</span>.<span class="fu">environment</span>;</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">if</span> (<span class="kw">this</span>.<span class="fu">webApplicationType</span> == WebApplicationType.<span class="fu">SERVLET</span>) {</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>        <span class="kw">return</span> <span class="kw">new</span> <span class="fu">StandardServletEnvironment</span>();</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">return</span> <span class="kw">new</span> <span class="fu">StandardEnvironment</span>();</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>这个方法有点意思, 如果 SpringApplication 实例的 属性 environment 是有值的话, 返回的就是当前实例的 environment. 这是个切入点, 如果能保证这个 environment 是已经加载了自定义配置文件的 environment, 自然可以保证 Spring Boot 的所有配置均支持.</p>
+<h4 id="configureenvironment">configureEnvironment</h4>
+<div class="sourceCode" id="cb4"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">protected</span> <span class="dt">void</span> <span class="fu">configureEnvironment</span>(ConfigurableEnvironment environment,</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>        <span class="bu">String</span>[] args) {</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">configurePropertySources</span>(environment, args);</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">configureProfiles</span>(environment, args);</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>这是另一个切入点, 关注一下这个方法是被 protectted 修饰的, 可以重写之.</p>
+<p>方法体里的两个方法也是 protected 修饰, <code>configurePropertySources(environment, args)</code> 这个方法实现了上篇提到的 官方文档加载顺序的 第 4-15 步骤, 细节不谈. 可以复写以支持自定义的配置文件加载.</p>
+<h4 id="再看看第三行">再看看第三行</h4>
+<div class="sourceCode" id="cb5"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>listeners.<span class="fu">environmentPrepared</span>(environment)</span></code></pre></div>
+<p>众所周知, Spring 扩展点尤其多, Spring Boot 也不例外. 这个 listeners 是什么东西?</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> SpringApplicationRunListeners {</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">private</span> <span class="dt">final</span> <span class="bu">List</span>&lt;SpringApplicationRunListener&gt; listeners;</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>SpringApplicationRunListener 又是什么?</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span> <span class="kw">interface</span> SpringApplicationRunListener {</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">/**</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>     <span class="co">*</span> Called immediately when the run method has first started<span class="co">. </span>Can be used for very</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>     <span class="co">*</span> early initialization<span class="co">.</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>     <span class="co">*/</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    <span class="dt">void</span> <span class="fu">starting</span>();</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    <span class="co">/**</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>     <span class="co">*</span> Called once the environment has been prepared<span class="co">,</span> but before the</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>     <span class="co">*</span> <span class="an">{@link </span>ApplicationContext<span class="an">}</span> has been created<span class="co">.</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>     <span class="co">*</span> <span class="an">@param environment </span>the environment</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>     <span class="co">*/</span></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>    <span class="dt">void</span> <span class="fu">environmentPrepared</span>(ConfigurableEnvironment environment);</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>    <span class="co">/**</span></span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>     <span class="co">*</span> Called once the <span class="an">{@link </span>ApplicationContext<span class="an">}</span> has been created and prepared<span class="co">,</span> but</span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>     <span class="co">*</span> before sources have been loaded<span class="co">.</span></span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>     <span class="co">*</span> <span class="an">@param context </span>the application context</span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>     <span class="co">*/</span></span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>    <span class="dt">void</span> <span class="fu">contextPrepared</span>(ConfigurableApplicationContext context);</span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>    <span class="co">/**</span></span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>     <span class="co">*</span> Called once the application context has been loaded but before it has been</span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>     <span class="co">*</span> refreshed<span class="co">.</span></span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a>     <span class="co">*</span> <span class="an">@param context </span>the application context</span>
+<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a>     <span class="co">*/</span></span>
+<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a>    <span class="dt">void</span> <span class="fu">contextLoaded</span>(ConfigurableApplicationContext context);</span>
+<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-30"><a href="#cb7-30" aria-hidden="true" tabindex="-1"></a>    <span class="co">/**</span></span>
+<span id="cb7-31"><a href="#cb7-31" aria-hidden="true" tabindex="-1"></a>     <span class="co">*</span> The context has been refreshed and the application has started but</span>
+<span id="cb7-32"><a href="#cb7-32" aria-hidden="true" tabindex="-1"></a>     <span class="co">*</span> <span class="an">{@link </span>CommandLineRunner CommandLineRunners<span class="an">}</span> and <span class="an">{@link </span>ApplicationRunner</span>
+<span id="cb7-33"><a href="#cb7-33" aria-hidden="true" tabindex="-1"></a>     <span class="an">*</span> ApplicationRunners<span class="an">}</span> have not been called<span class="co">.</span></span>
+<span id="cb7-34"><a href="#cb7-34" aria-hidden="true" tabindex="-1"></a>     <span class="co">*</span> <span class="an">@param context </span>the application context<span class="co">.</span></span>
+<span id="cb7-35"><a href="#cb7-35" aria-hidden="true" tabindex="-1"></a>     <span class="co">*</span> <span class="an">@since </span><span class="co">2.0.0</span></span>
+<span id="cb7-36"><a href="#cb7-36" aria-hidden="true" tabindex="-1"></a>     <span class="co">*/</span></span>
+<span id="cb7-37"><a href="#cb7-37" aria-hidden="true" tabindex="-1"></a>    <span class="dt">void</span> <span class="fu">started</span>(ConfigurableApplicationContext context);</span>
+<span id="cb7-38"><a href="#cb7-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-39"><a href="#cb7-39" aria-hidden="true" tabindex="-1"></a>    <span class="co">/**</span></span>
+<span id="cb7-40"><a href="#cb7-40" aria-hidden="true" tabindex="-1"></a>     <span class="co">*</span> Called immediately before the run method finishes<span class="co">,</span> when the application context has</span>
+<span id="cb7-41"><a href="#cb7-41" aria-hidden="true" tabindex="-1"></a>     <span class="co">*</span> been refreshed and all <span class="an">{@link </span>CommandLineRunner CommandLineRunners<span class="an">}</span> and</span>
+<span id="cb7-42"><a href="#cb7-42" aria-hidden="true" tabindex="-1"></a>     <span class="co">*</span> <span class="an">{@link </span>ApplicationRunner ApplicationRunners<span class="an">}</span> have been called<span class="co">.</span></span>
+<span id="cb7-43"><a href="#cb7-43" aria-hidden="true" tabindex="-1"></a>     <span class="co">*</span> <span class="an">@param context </span>the application context<span class="co">.</span></span>
+<span id="cb7-44"><a href="#cb7-44" aria-hidden="true" tabindex="-1"></a>     <span class="co">*</span> <span class="an">@since </span><span class="co">2.0.0</span></span>
+<span id="cb7-45"><a href="#cb7-45" aria-hidden="true" tabindex="-1"></a>     <span class="co">*/</span></span>
+<span id="cb7-46"><a href="#cb7-46" aria-hidden="true" tabindex="-1"></a>    <span class="dt">void</span> <span class="fu">running</span>(ConfigurableApplicationContext context);</span>
+<span id="cb7-47"><a href="#cb7-47" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-48"><a href="#cb7-48" aria-hidden="true" tabindex="-1"></a>    <span class="co">/**</span></span>
+<span id="cb7-49"><a href="#cb7-49" aria-hidden="true" tabindex="-1"></a>     <span class="co">*</span> Called when a failure occurs when running the application<span class="co">.</span></span>
+<span id="cb7-50"><a href="#cb7-50" aria-hidden="true" tabindex="-1"></a>     <span class="co">*</span> <span class="an">@param context </span>the application context or <span class="an">{@code null}</span> if a failure occurred before</span>
+<span id="cb7-51"><a href="#cb7-51" aria-hidden="true" tabindex="-1"></a>     <span class="co">*</span> the context was created</span>
+<span id="cb7-52"><a href="#cb7-52" aria-hidden="true" tabindex="-1"></a>     <span class="co">*</span> <span class="an">@param exception </span>the failure</span>
+<span id="cb7-53"><a href="#cb7-53" aria-hidden="true" tabindex="-1"></a>     <span class="co">*</span> <span class="an">@since </span><span class="co">2.0.0</span></span>
+<span id="cb7-54"><a href="#cb7-54" aria-hidden="true" tabindex="-1"></a>     <span class="co">*/</span></span>
+<span id="cb7-55"><a href="#cb7-55" aria-hidden="true" tabindex="-1"></a>    <span class="dt">void</span> <span class="fu">failed</span>(ConfigurableApplicationContext context, <span class="bu">Throwable</span> exception);</span>
+<span id="cb7-56"><a href="#cb7-56" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>比较明显了, Spring Boot 启动生命周期的监听器. 如果能在 <code>void starting();</code>中初始化 environment 并设置到 SpringApplication environment 属性, 问题解决.</p>
+<h2 id="确定方案">确定方案</h2>
+<ol type="1">
+<li>实现 SpringApplicationRunListener , 在 staring 方法中加载自定义配置到 environment 中.</li>
+<li>复写 configureEnvironment 方法.</li>
+</ol>
+<p>相对来讲, 方案 2 成本略高.</p>
+<p>采用方案1</p>
+<h2 id="落地">落地</h2>
+<p>方案确定后, 实现很简单.</p>
+<p>核心代码</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>  <span class="at">@Override</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">public</span> <span class="dt">void</span> <span class="fu">starting</span>() {</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    ConfigurableEnvironment environment = <span class="kw">this</span>.<span class="fu">getOrCreateEnvironment</span>();</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    <span class="bu">Class</span>&lt;?&gt; applicationClass = application.<span class="fu">getMainApplicationClass</span>();</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    DtConfig annotation = applicationClass.<span class="fu">getAnnotation</span>(DtConfig.<span class="fu">class</span>);</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">if</span> (annotation == <span class="kw">null</span>) {</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>      <span class="kw">return</span>;</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>    <span class="bu">String</span> path = annotation.<span class="fu">value</span>();</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>    <span class="bu">Resource</span> resource = <span class="kw">null</span>;</span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>    <span class="kw">if</span> (path.<span class="fu">startsWith</span>(<span class="st">&quot;classpath&quot;</span>)) {</span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>      resource = <span class="kw">new</span> <span class="fu">ClassPathResource</span>(path.<span class="fu">substring</span>(<span class="dv">10</span>));</span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>    } <span class="kw">else</span> {</span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>      <span class="kw">try</span> {</span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>        resource = <span class="kw">new</span> <span class="fu">FileUrlResource</span>(path);</span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>      } <span class="kw">catch</span> (<span class="bu">MalformedURLException</span> e) {</span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>        resource = <span class="kw">new</span> <span class="fu">FileSystemResource</span>(path);</span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>      }</span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a>    PropertySource&lt;?&gt; propertySource = <span class="fu">loadProperties</span>(<span class="st">&quot;Dtconfig&quot;</span>, resource, loader);</span>
+<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a>    environment.<span class="fu">getPropertySources</span>().<span class="fu">addFirst</span>(propertySource);</span>
+<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a>    application.<span class="fu">setEnvironment</span>(environment);</span>
+<span id="cb8-30"><a href="#cb8-30" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
+<p>详细代码, 传送门 <a href="https://github.com/guxingke/demo/tree/master/sb-demo/sb-config">sb-config</a></p>
+<h2 id="问题解答">问题解答</h2>
+<ul>
+<li><p>有没有更优雅的解决此问题的方法? 有, 如上.</p></li>
+<li><p>为何 Spring Boot 的配置文件加载顺序是这般定义? 暂且跳过, 没什么好说的, 约定优于配置, 配置分层级, 越靠近用户端, 配置的优先级越高.</p></li>
+<li><p>Spring Boot 加载配置是如何实现的? 参阅 configurePropertySources 方法, 过于细节.</p></li>
+<li><p>Spring Cloud Config 等配置中心的配置是如何结合到具体应用中的?</p>
+<ul>
+<li>Spring Cloud Config, Spring Boot 的自动配置</li>
+<li>apollo, Spring Boot 的自动配置</li>
+</ul></li>
+<li><p>Spring Cloud Config 等配置中心的配置支持日志系统配置文件位置的配置吗? 不支持, 几乎可以断言, 如果配置中心没有采用上文的实现方式, 这个问题是解决不了的.</p></li>
+</ul>
+<h2 id="ref">REF</h2>
+<ul>
+<li><a href="https://docs.spring.io/spring-boot/docs/current/reference/html/boot-features-external-config.html#boot-features-external-config">Externalized Configuration</a></li>
+<li><a href="https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#boot-features-custom-log-configuration">Custom Log Configuration</a></li>
+<li><a href="https://docs.spring.io/spring-boot/docs/current/reference/html/boot-features-external-config.html#boot-features-external-config-application-property-files">Application Property Files</a></li>
+<li><a href="https://www.guxingke.com/posts/beginer-for-sb-logging-system-configuration.html">配置SpringBoot-从日志系统配置说起</a></li>
+</ul>
+</div>
+</div>
+</div>
+</main>
+
+<div class="wrapper">
+<div id="disqus_thread"></div>
+<script>
+
+/**
+*  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+*  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
+var disqus_config = function () {
+this.page.url = "https://www.guxingke.com//post/how-sb-application-configuration-loading.html";  // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = ""; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+s.src = 'https://guxingke.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+
+
+
+
+<footer class="site-footer">
+<div class="wrapper">
+<div class="footer-col-wrapper">
+<div class="footer-col footer-col-1">
+
+<a href="/page/about.html">
+<span class="icon icon--me">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+<path d="M20 21.193l-.003.807h-19.993l-.004-.833c-.009-2.224.088-3.495 2.647-4.086 2.805-.647 5.573-1.227 4.242-3.682-3.943-7.275-1.123-11.399 3.111-11.399 4.153 0 7.043 3.971 3.11 11.398-1.292 2.44 1.375 3.02 4.242 3.682 2.57.594 2.657 1.873 2.648 4.113zm4-17.193h-7v2h7v-2zm0 4h-7v2h7v-2zm0 4h-7v2h7v-2z"></path>
+</svg>
+</span>
+</a>
+
+<a href="/page/projects.html">
+<span class="icon icon--project">
+<svg t="1563598923914" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="1567" width="24" height="24"><path d="M775 536.2 456.8 536.2c-26 0-47-21-47-47 0-26 21-47 47-47l318.2 0c26 0 47 21 47 47C822 515.2 800.8 536.2 775 536.2L775 536.2z" p-id="1568"></path><path d="M775 722.2 456.8 722.2c-26 0-47-21-47-47s21-47 47-47l318.2 0c26 0 47 21 47 47S800.8 722.2 775 722.2L775 722.2z" p-id="1569"></path><path d="M991 875.8 991 281.4c0-72.2-65.8-65.4-65.8-65.4s-392.8 0.4-371.8 0c-22.4 0.4-33.8-11.8-33.8-11.8s-15.6-27-43.8-69.4c-29.4-44.6-63.6-37.4-63.6-37.4L123 97.4C42.8 97.4 42 174.6 42 174.6L42 872c0 86 65 75.4 65 75.4l824.2 0C1000.8 947.4 991 875.8 991 875.8L991 875.8zM932 840.6c0 26.6-21.4 48-48 48L149 888.6c-26.6 0-48-21.4-48-48L101 343c0-26.6 21.4-48 48-48L884 295c26.6 0 48 21.4 48 48L932 840.6 932 840.6z" p-id="1570"></path><path d="M282.2 489.2m-50.2 0a25.1 25.1 0 1 0 100.4 0 25.1 25.1 0 1 0-100.4 0Z" p-id="1571"></path><path d="M282.2 675.2m-50.2 0a25.1 25.1 0 1 0 100.4 0 25.1 25.1 0 1 0-100.4 0Z" p-id="1572"></path></svg>
+</span>
+</a>
+
+<a href="https://github.com/guxingke">
+<span class="icon icon--github">
+<svg viewBox="0 0 16 16">
+<path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"></path>
+</svg>
+</span>
+</a>
+
+<a href="https://twitter.com/guxingke">
+<span class="icon icon--twitter">
+<svg viewBox="0 0 16 16">
+<path fill="#828282" d="M15.969,3.058c-0.586,0.26-1.217,0.436-1.878,0.515c0.675-0.405,1.194-1.045,1.438-1.809c-0.632,0.375-1.332,0.647-2.076,0.793c-0.596-0.636-1.446-1.033-2.387-1.033c-1.806,0-3.27,1.464-3.27,3.27 c0,0.256,0.029,0.506,0.085,0.745C5.163,5.404,2.753,4.102,1.14,2.124C0.859,2.607,0.698,3.168,0.698,3.767 c0,1.134,0.577,2.135,1.455,2.722C1.616,6.472,1.112,6.325,0.671,6.08c0,0.014,0,0.027,0,0.041c0,1.584,1.127,2.906,2.623,3.206 C3.02,9.402,2.731,9.442,2.433,9.442c-0.211,0-0.416-0.021-0.615-0.059c0.416,1.299,1.624,2.245,3.055,2.271 c-1.119,0.877-2.529,1.4-4.061,1.4c-0.264,0-0.524-0.015-0.78-0.046c1.447,0.928,3.166,1.469,5.013,1.469 c6.015,0,9.304-4.983,9.304-9.304c0-0.142-0.003-0.283-0.009-0.423C14.976,4.29,15.531,3.714,15.969,3.058z"></path>
+</svg>
+</span>
+</a>
+
+<a href="/page/links.html">
+<span class="icon icon--links">
+<svg t="1597890241324" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2110" width="24" height="24"><path d="M262.4 1017.6c-64 0-128-25.6-179.2-76.8-102.4-102.4-102.4-262.4 0-364.8l134.4-134.4 89.6 89.6-134.4 134.4c-51.2 51.2-51.2 128 0 179.2 51.2 51.2 128 51.2 179.2 0l179.2-179.2c25.6-25.6 38.4-57.6 38.4-89.6S556.8 512 537.6 486.4L467.2 422.4l89.6-89.6 70.4 70.4C672 448 697.6 512 697.6 582.4c0 70.4-25.6 134.4-76.8 179.2l-179.2 179.2C396.8 992 326.4 1017.6 262.4 1017.6zM467.2 691.2 396.8 627.2c-102.4-102.4-102.4-262.4 0-364.8l179.2-179.2c102.4-102.4 262.4-102.4 364.8 0 102.4 102.4 102.4 262.4 0 364.8l-134.4 134.4-89.6-89.6 134.4-134.4c51.2-51.2 51.2-128 0-179.2-51.2-51.2-134.4-51.2-179.2 0L486.4 352c-51.2 51.2-51.2 128 0 179.2l70.4 70.4L467.2 691.2z" p-id="2111"></path></svg>
+</svg>
+</span>
+</a>
+
+</div>
+</div>
+</div>
+</footer>
+</body>
+</html>

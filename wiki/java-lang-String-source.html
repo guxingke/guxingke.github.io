@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+<title>源码分析-Java/lang/String</title>
+<style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+</style>
+<style>
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+  position: relative; left: -1em; text-align: right; vertical-align: baseline;
+  border: none; display: inline-block;
+  -webkit-touch-callout: none; -webkit-user-select: none;
+  -khtml-user-select: none; -moz-user-select: none;
+  -ms-user-select: none; user-select: none;
+  padding: 0 4px; width: 4em;
+  background-color: #232629;
+  color: #7a7c7d;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #7a7c7d;  padding-left: 4px; }
+div.sourceCode
+{ color: #cfcfc2; background-color: #232629; }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span { color: #cfcfc2; } /* Normal */
+code span.al { color: #95da4c; background-color: #4d1f24; font-weight: bold; } /* Alert */
+code span.an { color: #3f8058; } /* Annotation */
+code span.at { color: #2980b9; } /* Attribute */
+code span.bn { color: #f67400; } /* BaseN */
+code span.bu { color: #7f8c8d; } /* BuiltIn */
+code span.cf { color: #fdbc4b; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #3daee9; } /* Char */
+code span.cn { color: #27aeae; font-weight: bold; } /* Constant */
+code span.co { color: #7a7c7d; } /* Comment */
+code span.cv { color: #7f8c8d; } /* CommentVar */
+code span.do { color: #a43340; } /* Documentation */
+code span.dt { color: #2980b9; } /* DataType */
+code span.dv { color: #f67400; } /* DecVal */
+code span.er { color: #da4453; text-decoration: underline; } /* Error */
+code span.ex { color: #0099ff; font-weight: bold; } /* Extension */
+code span.fl { color: #f67400; } /* Float */
+code span.fu { color: #8e44ad; } /* Function */
+code span.im { color: #27ae60; } /* Import */
+code span.in { color: #c45b00; } /* Information */
+code span.kw { color: #cfcfc2; font-weight: bold; } /* Keyword */
+code span.op { color: #cfcfc2; } /* Operator */
+code span.ot { color: #27ae60; } /* Other */
+code span.pp { color: #27ae60; } /* Preprocessor */
+code span.re { color: #2980b9; background-color: #153042; } /* RegionMarker */
+code span.sc { color: #3daee9; } /* SpecialChar */
+code span.ss { color: #da4453; } /* SpecialString */
+code span.st { color: #f44f4f; } /* String */
+code span.va { color: #27aeae; } /* Variable */
+code span.vs { color: #da4453; } /* VerbatimString */
+code span.wa { color: #da4453; } /* Warning */
+</style>
+<!--[if lt IE 9]>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+<![endif]-->
+<link rel="stylesheet" href="/assets/main.css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-F2PYD8JK1Z"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-F2PYD8JK1Z');
+</script>
+</head>
+<body>
+<header class="site-header" role="banner">
+<div class="wrapper">
+  <a class="site-title" href="/">孤星可</a>
+
+  <nav><ul class="nav-list clearfix">
+    <li class="nav-item"><a href="/" alt="首页" title="首页">首页</a></li>
+    <li class="nav-item"><a href="/wiki/index.html" alt="Wiki" title="Wiki">Wiki</a></li>
+    <li class="nav-item"><a href="/page/about.html" alt="关于" title="关于">关于</a></li>
+  </ul></nav>
+
+  <span class="site-desc">人生天地间 忽如远行客</span>
+</div>
+</header>
+
+<main class="page-content" aria-label="Content">
+<div class="wrapper">
+<div class="post">
+<h3 class="post-title">源码分析-Java/lang/String</h3>
+<div class="post-date"><span>最后修改时间<span> 2021-05-07</div>
+<div class="post-meta">
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#概览">概览</a></li>
+<li><a href="#常见用法">常见用法</a></li>
+<li><a href="#继承结构">继承结构</a></li>
+<li><a href="#主要属性">主要属性</a>
+<ul>
+<li><a href="#成员变量">成员变量</a></li>
+<li><a href="#静态变量">静态变量</a></li>
+</ul></li>
+<li><a href="#主要方法">主要方法</a>
+<ul>
+<li><a href="#构造函数">构造函数</a></li>
+<li><a href="#实例方法">实例方法</a></li>
+<li><a href="#静态方法">静态方法</a></li>
+</ul></li>
+<li><a href="#常见问题">常见问题</a>
+<ul>
+<li><a href="#平时开发都是直接-string-x-xxx没有使用-string-x-new-stringxxx-这两种方式有啥区别怎么选择">平时开发都是直接 <code>String x = "xxx"</code>，没有使用 <code>String x = new String("xxx")</code> ， 这两种方式有啥区别，怎么选择？</a></li>
+<li><a href="#xxx-yyy-是什么魔法-如果用过-c-语言会发现字符串不能直接相加"><code>"xxx" + "yyy"</code> 是什么魔法？ 如果用过 C 语言，会发现字符串不能直接相加。</a></li>
+<li><a href="#string-的不变性什么是不可变类不可变类意味着什么怎么实现不可变类-为什么要设计为不可变类">String 的不变性，什么是不可变类，不可变类意味着什么，怎么实现不可变类, 为什么要设计为不可变类，</a></li>
+<li><a href="#关于-string-intern-方法">关于 String intern 方法。</a></li>
+<li><a href="#switch-语句与-string"><span>Switch</span> 语句与 String</a></li>
+</ul></li>
+<li><a href="#补充">补充</a>
+<ul>
+<li><a href="#string-的不变性可以通过反射绕过">String 的不变性可以通过反射绕过。</a></li>
+</ul></li>
+<li><a href="#后记">后记</a></li>
+<li><a href="#参考">参考</a></li>
+</ul>
+</nav>
+</div>
+<div class="post-content">
+<h2 id="概览">概览</h2>
+<p>出镜率和基本类型一样高的核心数据结构，可以没有 boolean , 但是不能没有 String. 帝国基石。</p>
+<h2 id="常见用法">常见用法</h2>
+<p><a href="../tests/lang/StringTest.java">测试类</a></p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> length = <span class="st">&quot;test&quot;</span>.<span class="fu">length</span>();</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">assertEquals</span>(<span class="dv">4</span>, length);</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="dt">boolean</span> bc = <span class="st">&quot;test&quot;</span>.<span class="fu">contains</span>(<span class="st">&quot;tes&quot;</span>);</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">assertEquals</span>(<span class="kw">true</span>, bc);</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="dt">boolean</span> bs = <span class="st">&quot;test&quot;</span>.<span class="fu">startsWith</span>(<span class="st">&quot;tes&quot;</span>);</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="fu">assertEquals</span>(<span class="kw">true</span>, bs);</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="dt">boolean</span> be = <span class="st">&quot;test&quot;</span>.<span class="fu">endsWith</span>(<span class="st">&quot;st&quot;</span>);</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="fu">assertEquals</span>(<span class="kw">true</span>, be);</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="dt">char</span> cc = <span class="st">&quot;test&quot;</span>.<span class="fu">charAt</span>(<span class="dv">3</span>);</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="fu">assertEquals</span>(<span class="ch">&#39;t&#39;</span>, cc);</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> ii = <span class="st">&quot;test&quot;</span>.<span class="fu">indexOf</span>(<span class="ch">&#39;e&#39;</span>);</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="fu">assertEquals</span>(<span class="dv">1</span>, ii);</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>java.<span class="fu">lang</span>.<span class="fu">StringTest</span> trim = <span class="st">&quot; test &quot;</span>.<span class="fu">trim</span>();</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="fu">assertEquals</span>(<span class="st">&quot;test&quot;</span>, trim);</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>java.<span class="fu">lang</span>.<span class="fu">StringTest</span>[] es = <span class="st">&quot;test&quot;</span>.<span class="fu">split</span>(<span class="st">&quot;e&quot;</span>);</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a><span class="fu">assertEquals</span>(<span class="dv">2</span>, es.<span class="fu">length</span>);</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a><span class="fu">assertEquals</span>(<span class="st">&quot;t&quot;</span>, es[<span class="dv">0</span>]);</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a><span class="fu">assertEquals</span>(<span class="st">&quot;st&quot;</span>, es[<span class="dv">1</span>]);</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>java.<span class="fu">lang</span>.<span class="fu">StringTest</span> substring = <span class="st">&quot;test&quot;</span>.<span class="fu">substring</span>(<span class="dv">1</span>, <span class="dv">2</span>);</span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a><span class="fu">assertEquals</span>(<span class="st">&quot;e&quot;</span>, substring);</span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>java.<span class="fu">lang</span>.<span class="fu">StringTest</span> uc = <span class="st">&quot;test&quot;</span>.<span class="fu">toUpperCase</span>();</span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a><span class="fu">assertEquals</span>(<span class="st">&quot;TEST&quot;</span>, uc);</span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>java.<span class="fu">lang</span>.<span class="fu">StringTest</span> lc = <span class="st">&quot;tEst&quot;</span>.<span class="fu">toLowerCase</span>();</span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a><span class="fu">assertEquals</span>(<span class="st">&quot;test&quot;</span>, lc);</span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>java.<span class="fu">lang</span>.<span class="fu">StringTest</span> replace = <span class="st">&quot;test&quot;</span>.<span class="fu">replace</span>(<span class="st">&quot;te&quot;</span>, <span class="st">&quot;T&quot;</span>);</span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a><span class="fu">assertEquals</span>(<span class="st">&quot;Tst&quot;</span>, replace);</span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a>java.<span class="fu">lang</span>.<span class="fu">StringTest</span> ra = <span class="st">&quot;stest&quot;</span>.<span class="fu">replaceAll</span>(<span class="st">&quot;.{2}t&quot;</span>, <span class="st">&quot;T&quot;</span>);</span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a><span class="fu">assertEquals</span>(<span class="st">&quot;stT&quot;</span>, ra);</span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a>java.<span class="fu">lang</span>.<span class="fu">StringTest</span> test = java.<span class="fu">lang</span>.<span class="fu">StringTest</span>.<span class="fu">join</span>(<span class="st">&quot;,&quot;</span>, <span class="st">&quot;x&quot;</span>, <span class="st">&quot;y&quot;</span>, <span class="st">&quot;z&quot;</span>);</span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a><span class="fu">assertEquals</span>(<span class="st">&quot;x,y,z&quot;</span>, test);</span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a>java.<span class="fu">lang</span>.<span class="fu">StringTest</span> j2 = java.<span class="fu">lang</span>.<span class="fu">StringTest</span>.<span class="fu">join</span>(<span class="st">&quot;,&quot;</span>, <span class="bu">Arrays</span>.<span class="fu">asList</span>(<span class="st">&quot;x&quot;</span>, <span class="st">&quot;y&quot;</span>, <span class="st">&quot;z&quot;</span>));</span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a><span class="fu">assertEquals</span>(<span class="st">&quot;x,y,z&quot;</span>, j2);</span></code></pre></div>
+<h2 id="继承结构">继承结构</h2>
+<figure>
+<img src="java.lang.String.png" alt="java.lang.String" /><figcaption aria-hidden="true">java.lang.String</figcaption>
+</figure>
+<h2 id="主要属性">主要属性</h2>
+<h3 id="成员变量">成员变量</h3>
+<div class="sourceCode" id="cb2"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">/**</span> The value is used for character storage<span class="co">. */</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">private</span> <span class="dt">final</span> <span class="dt">char</span> value[]; <span class="co">// 字符数组， 存储字符</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co">/**</span> Cache the hash code for the string <span class="co">*/</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="kw">private</span> <span class="dt">int</span> hash; <span class="co">// Default to 0 // 性能优化， String 的实现是不可变的， 生命周期内 hash 也是不会变得， 不用每次计算。 </span></span></code></pre></div>
+<h3 id="静态变量">静态变量</h3>
+<div class="sourceCode" id="cb3"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co">/**</span> use serialVersionUID from JDK <span class="co">1.0.2</span> for interoperability <span class="co">*/</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="kw">private</span> <span class="dt">static</span> <span class="dt">final</span> <span class="dt">long</span> serialVersionUID = -<span class="dv">6849794470754667710L</span>;</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co">/**</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> Class String is special cased within the Serialization Stream Protocol<span class="co">.</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> A String instance is written into an ObjectOutputStream according to</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="kw">&lt;a</span><span class="ot"> href=</span><span class="st">&quot;{@docRoot}/../platform/serialization/spec/output.html&quot;</span><span class="kw">&gt;</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> Object Serialization Specification<span class="co">,</span> Section <span class="co">6.2,</span> <span class="co">&quot;</span>Stream Elements<span class="co">&quot;</span><span class="kw">&lt;/a&gt;</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a> <span class="co">*/</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="kw">private</span> <span class="dt">static</span> <span class="dt">final</span> <span class="bu">ObjectStreamField</span>[] serialPersistentFields =</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>    <span class="kw">new</span> <span class="bu">ObjectStreamField</span>[<span class="dv">0</span>]; 与序列化有关， 后续分析序列化时再详细分析</span></code></pre></div>
+<h2 id="主要方法">主要方法</h2>
+<h3 id="构造函数">构造函数</h3>
+<div class="sourceCode" id="cb4"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co">/**</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> Initializes a newly created <span class="an">{@code String}</span> object so that it represents</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> an empty character sequence<span class="co">. </span> Note that use of this constructor is</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> unnecessary since Strings are immutable<span class="co">.</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a> <span class="co">*/</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span> <span class="bu">String</span>() {</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">this</span>.<span class="fu">value</span> = <span class="st">&quot;&quot;</span>.<span class="fu">value</span>;</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="co">/**</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> Constructs a new <span class="an">{@code String}</span> by decoding the specified subarray of</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> bytes using the specified <span class="an">{@linkplain </span>java<span class="an">.</span>nio<span class="an">.</span>charset<span class="an">.</span>Charset charset<span class="an">}</span><span class="co">.</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> The length of the new <span class="an">{@code String}</span> is a function of the charset<span class="co">,</span> and</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> hence may not be equal to the length of the subarray<span class="co">.</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="kw">&lt;p&gt;</span> This method always replaces malformed<span class="co">-</span>input and unmappable<span class="co">-</span>character</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> sequences with this charset<span class="co">&#39;</span>s default replacement string<span class="co">.</span>  The <span class="co">{@</span>link</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> java<span class="co">.</span>nio<span class="co">.</span>charset<span class="co">.</span>CharsetDecoder<span class="co">}</span> class should be used when more control</span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> over the decoding process is required<span class="co">.</span></span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span></span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">@param </span><span class="co"> </span><span class="an">bytes</span></span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span>         The bytes to be decoded into characters</span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span></span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">@param </span><span class="co"> </span><span class="an">offset</span></span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span>         The index of the first byte to decode</span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span></span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">@param </span><span class="co"> </span><span class="an">length</span></span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span>         The number of bytes to decode</span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span></span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">@param </span><span class="co"> </span><span class="an">charset</span></span>
+<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span>         The <span class="an">{@linkplain </span>java<span class="an">.</span>nio<span class="an">.</span>charset<span class="an">.</span>Charset charset<span class="an">}</span> to be used to</span>
+<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span>         decode the <span class="an">{@code bytes}</span></span>
+<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span></span>
+<span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">@throws </span><span class="co"> </span><span class="an">IndexOutOfBoundsException</span></span>
+<span id="cb4-35"><a href="#cb4-35" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span>          If the <span class="an">{@code offset}</span> and <span class="an">{@code length}</span> arguments index</span>
+<span id="cb4-36"><a href="#cb4-36" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span>          characters outside the bounds of the <span class="an">{@code bytes}</span> array</span>
+<span id="cb4-37"><a href="#cb4-37" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span></span>
+<span id="cb4-38"><a href="#cb4-38" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">@since </span> <span class="co">1.6</span></span>
+<span id="cb4-39"><a href="#cb4-39" aria-hidden="true" tabindex="-1"></a> <span class="co">*/</span></span>
+<span id="cb4-40"><a href="#cb4-40" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span> <span class="bu">String</span>(<span class="dt">byte</span> bytes[], <span class="dt">int</span> offset, <span class="dt">int</span> length, <span class="bu">Charset</span> charset) {</span>
+<span id="cb4-41"><a href="#cb4-41" aria-hidden="true" tabindex="-1"></a>    <span class="kw">if</span> (charset == <span class="kw">null</span>)</span>
+<span id="cb4-42"><a href="#cb4-42" aria-hidden="true" tabindex="-1"></a>        <span class="kw">throw</span> <span class="kw">new</span> <span class="bu">NullPointerException</span>(<span class="st">&quot;charset&quot;</span>);</span>
+<span id="cb4-43"><a href="#cb4-43" aria-hidden="true" tabindex="-1"></a>    <span class="fu">checkBounds</span>(bytes, offset, length);</span>
+<span id="cb4-44"><a href="#cb4-44" aria-hidden="true" tabindex="-1"></a>    <span class="kw">this</span>.<span class="fu">value</span> =  StringCoding.<span class="fu">decode</span>(charset, bytes, offset, length);</span>
+<span id="cb4-45"><a href="#cb4-45" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h3 id="实例方法">实例方法</h3>
+<h4 id="concat-字符串连接">concat 字符串连接</h4>
+<div class="sourceCode" id="cb5"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co">/**</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> Concatenates the specified string to the end of this string<span class="co">.</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="kw">&lt;p&gt;</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> If the length of the argument string is <span class="an">{@code 0}</span><span class="co">,</span> then this</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">{@code String}</span> object is returned<span class="co">.</span> Otherwise<span class="co">,</span> a</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">{@code String}</span> object is returned that represents a character</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> sequence that is the concatenation of the character sequence</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> represented by this <span class="an">{@code String}</span> object and the character</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> sequence represented by the argument string<span class="co">.</span><span class="kw">&lt;p&gt;</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> Examples<span class="co">:</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="kw">&lt;blockquote&gt;&lt;pre&gt;</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="co">&quot;</span>cares<span class="co">&quot;.</span>concat<span class="co">(&quot;</span>s<span class="co">&quot;)</span> returns <span class="co">&quot;</span>caress<span class="co">&quot;</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="co">&quot;</span>to<span class="co">&quot;.</span>concat<span class="co">(&quot;</span>get<span class="co">&quot;).</span>concat<span class="co">(&quot;</span>her<span class="co">&quot;)</span> returns <span class="co">&quot;</span>together<span class="co">&quot;</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="kw">&lt;/pre&gt;&lt;/blockquote&gt;</span></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">@param </span><span class="co">  </span><span class="an">str </span>  the <span class="an">{@code String}</span> that is concatenated to the end</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span>                of this <span class="an">{@code String}</span><span class="co">.</span></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">@return </span> a string that represents the concatenation of this object<span class="co">&#39;</span>s</span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span>          characters followed by the string argument<span class="co">&#39;</span>s characters<span class="co">.</span></span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a> <span class="co">*/</span></span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span> <span class="bu">String</span> <span class="fu">concat</span>(<span class="bu">String</span> str) {</span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> otherLen = str.<span class="fu">length</span>();  <span class="co">// 小心 NullPointException.</span></span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>    <span class="kw">if</span> (otherLen == <span class="dv">0</span>) {</span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>        <span class="kw">return</span> <span class="kw">this</span>;  <span class="co">// 返回自身</span></span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> len = value.<span class="fu">length</span>;</span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>    <span class="dt">char</span> buf[] = <span class="bu">Arrays</span>.<span class="fu">copyOf</span>(value, len + otherLen);  <span class="co">// 复制字符数组</span></span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>    str.<span class="fu">getChars</span>(buf, len); <span class="co">// 从 len 索引位置开始复制字节数组数据</span></span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>    <span class="kw">return</span> <span class="kw">new</span> <span class="bu">String</span>(buf, <span class="kw">true</span>);</span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>这个方法用的少，一般都是用 “xx” + "yy’ 实现了。从实现上来看， 此方法会更高效。</p>
+<h4 id="startswith-endswith-方法">startsWith &amp; endsWith 方法</h4>
+<div class="sourceCode" id="cb6"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co">/**</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> Tests if the substring of this string beginning at the</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> specified index starts with the specified prefix<span class="co">.</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">@param </span><span class="co">  </span><span class="an">prefix </span>   the prefix<span class="co">.</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">@param </span><span class="co">  </span><span class="an">toffset </span>  where to begin looking in this string<span class="co">.</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">@return </span> <span class="an">{@code true}</span> if the character sequence represented by the</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span>          argument is a prefix of the substring of this object starting</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span>          at index <span class="an">{@code toffset}</span><span class="co">;</span> <span class="an">{@code false}</span> otherwise<span class="co">.</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span>          The result is <span class="an">{@code false}</span> if <span class="an">{@code toffset}</span> is</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span>          negative or greater than the length of this</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span>          <span class="an">{@code String}</span> object<span class="co">;</span> otherwise the result is the same</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span>          as the result of the expression</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span>          <span class="kw">&lt;pre&gt;</span></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span>          this<span class="co">.</span>substring<span class="co">(</span>toffset<span class="co">).</span>startsWith<span class="co">(</span>prefix<span class="co">)</span></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span>          <span class="kw">&lt;/pre&gt;</span></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a> <span class="co">*/</span></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span> <span class="dt">boolean</span> <span class="fu">startsWith</span>(<span class="bu">String</span> prefix, <span class="dt">int</span> toffset) {</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>    <span class="dt">char</span> ta[] = value;</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> to = toffset;</span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>    <span class="dt">char</span> pa[] = prefix.<span class="fu">value</span>;</span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> po = <span class="dv">0</span>;</span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> pc = prefix.<span class="fu">value</span>.<span class="fu">length</span>;</span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Note: toffset might be near -1&gt;&gt;&gt;1.</span></span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>    <span class="kw">if</span> ((toffset &lt; <span class="dv">0</span>) || (toffset &gt; value.<span class="fu">length</span> - pc)) {  <span class="co">// 可以有个小优化， toffset &lt; 0 判断可以提到方法体最前面。 </span></span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>        <span class="kw">return</span> <span class="kw">false</span>;</span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a>    <span class="kw">while</span> (--pc &gt;= <span class="dv">0</span>) { <span class="co">// 循环比对字符</span></span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a>        <span class="kw">if</span> (ta[to++] != pa[po++]) { </span>
+<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a>            <span class="kw">return</span> <span class="kw">false</span>;</span>
+<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb6-33"><a href="#cb6-33" aria-hidden="true" tabindex="-1"></a>    <span class="kw">return</span> <span class="kw">true</span>;</span>
+<span id="cb6-34"><a href="#cb6-34" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb6-35"><a href="#cb6-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-36"><a href="#cb6-36" aria-hidden="true" tabindex="-1"></a><span class="co">/**</span></span>
+<span id="cb6-37"><a href="#cb6-37" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> Tests if this string ends with the specified suffix<span class="co">.</span></span>
+<span id="cb6-38"><a href="#cb6-38" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span></span>
+<span id="cb6-39"><a href="#cb6-39" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">@param </span><span class="co">  </span><span class="an">suffix </span>  the suffix<span class="co">.</span></span>
+<span id="cb6-40"><a href="#cb6-40" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">@return </span> <span class="an">{@code true}</span> if the character sequence represented by the</span>
+<span id="cb6-41"><a href="#cb6-41" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span>          argument is a suffix of the character sequence represented by</span>
+<span id="cb6-42"><a href="#cb6-42" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span>          this object<span class="co">;</span> <span class="an">{@code false}</span> otherwise<span class="co">.</span> Note that the</span>
+<span id="cb6-43"><a href="#cb6-43" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span>          result will be <span class="an">{@code true}</span> if the argument is the</span>
+<span id="cb6-44"><a href="#cb6-44" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span>          empty string or is equal to this <span class="an">{@code String}</span> object</span>
+<span id="cb6-45"><a href="#cb6-45" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span>          as determined by the <span class="an">{@link #</span>equals<span class="an">(</span>Object<span class="an">)}</span> method<span class="co">.</span></span>
+<span id="cb6-46"><a href="#cb6-46" aria-hidden="true" tabindex="-1"></a> <span class="co">*/</span></span>
+<span id="cb6-47"><a href="#cb6-47" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span> <span class="dt">boolean</span> <span class="fu">endsWith</span>(<span class="bu">String</span> suffix) {</span>
+<span id="cb6-48"><a href="#cb6-48" aria-hidden="true" tabindex="-1"></a>    <span class="kw">return</span> <span class="fu">startsWith</span>(suffix, value.<span class="fu">length</span> - suffix.<span class="fu">value</span>.<span class="fu">length</span>); <span class="co">// 调用 startsWith 从末尾最近处开始比对。</span></span>
+<span id="cb6-49"><a href="#cb6-49" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>这两兄弟出镜率也挺高。实现比较简单。</p>
+<h4 id="indexof-系列">indexOf 系列</h4>
+<p>主要包含 indexOf , lastIndexOf 方法。 判断指定字符或字符串在目标字符串的起始位置。</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co">/**</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> Returns the index within this string of the first occurrence of the</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> specified character<span class="co">,</span> starting the search at the specified index<span class="co">.</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="kw">&lt;p&gt;</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> If a character with value <span class="an">{@code ch}</span> occurs in the</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> character sequence represented by this <span class="an">{@code String}</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> object at an index no smaller than <span class="an">{@code fromIndex}</span><span class="co">,</span> then</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> the index of the first such occurrence is returned<span class="co">.</span> For values</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> of <span class="an">{@code ch}</span> in the range from <span class="co">0</span> to <span class="co">0xFFFF</span> <span class="co">(</span>inclusive<span class="co">),</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> this is the smallest value <span class="kw">&lt;i&gt;</span>k<span class="kw">&lt;/i&gt;</span> such that<span class="co">:</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="kw">&lt;blockquote&gt;&lt;pre&gt;</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="co">(</span>this<span class="co">.</span>charAt<span class="co">(</span><span class="kw">&lt;i&gt;</span>k<span class="kw">&lt;/i&gt;</span><span class="co">)</span> <span class="co">==</span> ch<span class="co">)</span> <span class="an">{@code &amp;&amp;}</span> <span class="co">(</span><span class="kw">&lt;i&gt;</span>k<span class="kw">&lt;/i&gt;</span> <span class="dv">&amp;gt;</span><span class="co">=</span> fromIndex<span class="co">)</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="kw">&lt;/pre&gt;&lt;/blockquote&gt;</span></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> is true<span class="co">.</span> For other values of <span class="an">{@code ch}</span><span class="co">,</span> it is the</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> smallest value <span class="kw">&lt;i&gt;</span>k<span class="kw">&lt;/i&gt;</span> such that<span class="co">:</span></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="kw">&lt;blockquote&gt;&lt;pre&gt;</span></span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="co">(</span>this<span class="co">.</span>codePointAt<span class="co">(</span><span class="kw">&lt;i&gt;</span>k<span class="kw">&lt;/i&gt;</span><span class="co">)</span> <span class="co">==</span> ch<span class="co">)</span> <span class="an">{@code &amp;&amp;}</span> <span class="co">(</span><span class="kw">&lt;i&gt;</span>k<span class="kw">&lt;/i&gt;</span> <span class="dv">&amp;gt;</span><span class="co">=</span> fromIndex<span class="co">)</span></span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="kw">&lt;/pre&gt;&lt;/blockquote&gt;</span></span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> is true<span class="co">.</span> In either case<span class="co">,</span> if no such character occurs in this</span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> string at or after position <span class="an">{@code fromIndex}</span><span class="co">,</span> then</span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">{@code -1}</span> is returned<span class="co">.</span></span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span></span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="kw">&lt;p&gt;</span></span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> There is no restriction on the value of <span class="an">{@code fromIndex}</span><span class="co">.</span> If it</span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> is negative<span class="co">,</span> it has the same effect as if it were zero<span class="co">:</span> this entire</span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> string may be searched<span class="co">.</span> If it is greater than the length of this</span>
+<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> string<span class="co">,</span> it has the same effect as if it were equal to the length of</span>
+<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> this string<span class="co">:</span> <span class="an">{@code -1}</span> is returned<span class="co">.</span></span>
+<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span></span>
+<span id="cb7-30"><a href="#cb7-30" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="kw">&lt;p&gt;</span>All indices are specified in <span class="an">{@code char}</span> values</span>
+<span id="cb7-31"><a href="#cb7-31" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="co">(</span>Unicode code units<span class="co">).</span></span>
+<span id="cb7-32"><a href="#cb7-32" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span></span>
+<span id="cb7-33"><a href="#cb7-33" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">@param </span><span class="co">  </span><span class="an">ch </span>         a character <span class="co">(</span>Unicode code point<span class="co">).</span></span>
+<span id="cb7-34"><a href="#cb7-34" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">@param </span><span class="co">  </span><span class="an">fromIndex </span>  the index to start the search from<span class="co">.</span></span>
+<span id="cb7-35"><a href="#cb7-35" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">@return </span> the index of the first occurrence of the character in the</span>
+<span id="cb7-36"><a href="#cb7-36" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span>          character sequence represented by this object that is greater</span>
+<span id="cb7-37"><a href="#cb7-37" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span>          than or equal to <span class="an">{@code fromIndex}</span><span class="co">,</span> or <span class="an">{@code -1}</span></span>
+<span id="cb7-38"><a href="#cb7-38" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span>          if the character does not occur<span class="co">.</span></span>
+<span id="cb7-39"><a href="#cb7-39" aria-hidden="true" tabindex="-1"></a> <span class="co">*/</span></span>
+<span id="cb7-40"><a href="#cb7-40" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span> <span class="dt">int</span> <span class="fu">indexOf</span>(<span class="dt">int</span> ch, <span class="dt">int</span> fromIndex) {</span>
+<span id="cb7-41"><a href="#cb7-41" aria-hidden="true" tabindex="-1"></a>    <span class="dt">final</span> <span class="dt">int</span> max = value.<span class="fu">length</span>;</span>
+<span id="cb7-42"><a href="#cb7-42" aria-hidden="true" tabindex="-1"></a>    <span class="kw">if</span> (fromIndex &lt; <span class="dv">0</span>) {</span>
+<span id="cb7-43"><a href="#cb7-43" aria-hidden="true" tabindex="-1"></a>        fromIndex = <span class="dv">0</span>;</span>
+<span id="cb7-44"><a href="#cb7-44" aria-hidden="true" tabindex="-1"></a>    } <span class="kw">else</span> <span class="kw">if</span> (fromIndex &gt;= max) {</span>
+<span id="cb7-45"><a href="#cb7-45" aria-hidden="true" tabindex="-1"></a>        <span class="co">// Note: fromIndex might be near -1&gt;&gt;&gt;1.</span></span>
+<span id="cb7-46"><a href="#cb7-46" aria-hidden="true" tabindex="-1"></a>        <span class="kw">return</span> -<span class="dv">1</span>;</span>
+<span id="cb7-47"><a href="#cb7-47" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb7-48"><a href="#cb7-48" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-49"><a href="#cb7-49" aria-hidden="true" tabindex="-1"></a>    <span class="kw">if</span> (ch &lt; <span class="bu">Character</span>.<span class="fu">MIN_SUPPLEMENTARY_CODE_POINT</span>) { <span class="co">// unicode 最小值</span></span>
+<span id="cb7-50"><a href="#cb7-50" aria-hidden="true" tabindex="-1"></a>        <span class="co">// handle most cases here (ch is a BMP code point or a</span></span>
+<span id="cb7-51"><a href="#cb7-51" aria-hidden="true" tabindex="-1"></a>        <span class="co">// negative value (invalid code point))</span></span>
+<span id="cb7-52"><a href="#cb7-52" aria-hidden="true" tabindex="-1"></a>        <span class="dt">final</span> <span class="dt">char</span>[] value = <span class="kw">this</span>.<span class="fu">value</span>;</span>
+<span id="cb7-53"><a href="#cb7-53" aria-hidden="true" tabindex="-1"></a>        <span class="kw">for</span> (<span class="dt">int</span> i = fromIndex; i &lt; max; i++) {</span>
+<span id="cb7-54"><a href="#cb7-54" aria-hidden="true" tabindex="-1"></a>            <span class="kw">if</span> (value[i] == ch) {</span>
+<span id="cb7-55"><a href="#cb7-55" aria-hidden="true" tabindex="-1"></a>                <span class="kw">return</span> i;</span>
+<span id="cb7-56"><a href="#cb7-56" aria-hidden="true" tabindex="-1"></a>            }</span>
+<span id="cb7-57"><a href="#cb7-57" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb7-58"><a href="#cb7-58" aria-hidden="true" tabindex="-1"></a>        <span class="kw">return</span> -<span class="dv">1</span>;</span>
+<span id="cb7-59"><a href="#cb7-59" aria-hidden="true" tabindex="-1"></a>    } <span class="kw">else</span> {</span>
+<span id="cb7-60"><a href="#cb7-60" aria-hidden="true" tabindex="-1"></a>        <span class="kw">return</span> <span class="fu">indexOfSupplementary</span>(ch, fromIndex);</span>
+<span id="cb7-61"><a href="#cb7-61" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb7-62"><a href="#cb7-62" aria-hidden="true" tabindex="-1"></a><span class="co">// 判断字符在字符串的起始位置， 简而言之， 使用 ascii 码性能最好。</span></span>
+<span id="cb7-63"><a href="#cb7-63" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-64"><a href="#cb7-64" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb7-65"><a href="#cb7-65" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-66"><a href="#cb7-66" aria-hidden="true" tabindex="-1"></a><span class="co">/**</span></span>
+<span id="cb7-67"><a href="#cb7-67" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> Code shared by String and StringBuffer to do searches<span class="co">. </span>The</span>
+<span id="cb7-68"><a href="#cb7-68" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> source is the character array being searched<span class="co">,</span> and the target</span>
+<span id="cb7-69"><a href="#cb7-69" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> is the string being searched for<span class="co">.</span></span>
+<span id="cb7-70"><a href="#cb7-70" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span></span>
+<span id="cb7-71"><a href="#cb7-71" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">@param </span><span class="co">  </span><span class="an">source </span>      the characters being searched<span class="co">.</span></span>
+<span id="cb7-72"><a href="#cb7-72" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">@param </span><span class="co">  </span><span class="an">sourceOffset </span>offset of the source string<span class="co">.</span></span>
+<span id="cb7-73"><a href="#cb7-73" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">@param </span><span class="co">  </span><span class="an">sourceCount </span> count of the source string<span class="co">.</span></span>
+<span id="cb7-74"><a href="#cb7-74" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">@param </span><span class="co">  </span><span class="an">target </span>      the characters being searched for<span class="co">.</span></span>
+<span id="cb7-75"><a href="#cb7-75" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">@param </span><span class="co">  </span><span class="an">targetOffset </span>offset of the target string<span class="co">.</span></span>
+<span id="cb7-76"><a href="#cb7-76" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">@param </span><span class="co">  </span><span class="an">targetCount </span> count of the target string<span class="co">.</span></span>
+<span id="cb7-77"><a href="#cb7-77" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">@param </span><span class="co">  </span><span class="an">fromIndex </span>   the index to begin searching from<span class="co">.</span></span>
+<span id="cb7-78"><a href="#cb7-78" aria-hidden="true" tabindex="-1"></a> <span class="co">*/</span></span>
+<span id="cb7-79"><a href="#cb7-79" aria-hidden="true" tabindex="-1"></a><span class="dt">static</span> <span class="dt">int</span> <span class="fu">indexOf</span>(<span class="dt">char</span>[] source, <span class="dt">int</span> sourceOffset, <span class="dt">int</span> sourceCount,</span>
+<span id="cb7-80"><a href="#cb7-80" aria-hidden="true" tabindex="-1"></a>        <span class="dt">char</span>[] target, <span class="dt">int</span> targetOffset, <span class="dt">int</span> targetCount,</span>
+<span id="cb7-81"><a href="#cb7-81" aria-hidden="true" tabindex="-1"></a>        <span class="dt">int</span> fromIndex) {</span>
+<span id="cb7-82"><a href="#cb7-82" aria-hidden="true" tabindex="-1"></a>    <span class="kw">if</span> (fromIndex &gt;= sourceCount) {</span>
+<span id="cb7-83"><a href="#cb7-83" aria-hidden="true" tabindex="-1"></a>        <span class="kw">return</span> (targetCount == <span class="dv">0</span> ? sourceCount : -<span class="dv">1</span>);</span>
+<span id="cb7-84"><a href="#cb7-84" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb7-85"><a href="#cb7-85" aria-hidden="true" tabindex="-1"></a>    <span class="kw">if</span> (fromIndex &lt; <span class="dv">0</span>) {</span>
+<span id="cb7-86"><a href="#cb7-86" aria-hidden="true" tabindex="-1"></a>        fromIndex = <span class="dv">0</span>;</span>
+<span id="cb7-87"><a href="#cb7-87" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb7-88"><a href="#cb7-88" aria-hidden="true" tabindex="-1"></a>    <span class="kw">if</span> (targetCount == <span class="dv">0</span>) {</span>
+<span id="cb7-89"><a href="#cb7-89" aria-hidden="true" tabindex="-1"></a>        <span class="kw">return</span> fromIndex;</span>
+<span id="cb7-90"><a href="#cb7-90" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb7-91"><a href="#cb7-91" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-92"><a href="#cb7-92" aria-hidden="true" tabindex="-1"></a>    <span class="dt">char</span> first = target[targetOffset];</span>
+<span id="cb7-93"><a href="#cb7-93" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> max = sourceOffset + (sourceCount - targetCount);</span>
+<span id="cb7-94"><a href="#cb7-94" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-95"><a href="#cb7-95" aria-hidden="true" tabindex="-1"></a>    <span class="kw">for</span> (<span class="dt">int</span> i = sourceOffset + fromIndex; i &lt;= max; i++) {</span>
+<span id="cb7-96"><a href="#cb7-96" aria-hidden="true" tabindex="-1"></a>        <span class="co">/* Look for first character. */</span></span>
+<span id="cb7-97"><a href="#cb7-97" aria-hidden="true" tabindex="-1"></a>        <span class="kw">if</span> (source[i] != first) {</span>
+<span id="cb7-98"><a href="#cb7-98" aria-hidden="true" tabindex="-1"></a>            <span class="kw">while</span> (++i &lt;= max &amp;&amp; source[i] != first);</span>
+<span id="cb7-99"><a href="#cb7-99" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb7-100"><a href="#cb7-100" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-101"><a href="#cb7-101" aria-hidden="true" tabindex="-1"></a>        <span class="co">/* Found first character, now look at the rest of v2 */</span></span>
+<span id="cb7-102"><a href="#cb7-102" aria-hidden="true" tabindex="-1"></a>        <span class="kw">if</span> (i &lt;= max) {</span>
+<span id="cb7-103"><a href="#cb7-103" aria-hidden="true" tabindex="-1"></a>            <span class="dt">int</span> j = i + <span class="dv">1</span>;</span>
+<span id="cb7-104"><a href="#cb7-104" aria-hidden="true" tabindex="-1"></a>            <span class="dt">int</span> end = j + targetCount - <span class="dv">1</span>;</span>
+<span id="cb7-105"><a href="#cb7-105" aria-hidden="true" tabindex="-1"></a>            <span class="kw">for</span> (<span class="dt">int</span> k = targetOffset + <span class="dv">1</span>; j &lt; end &amp;&amp; source[j]</span>
+<span id="cb7-106"><a href="#cb7-106" aria-hidden="true" tabindex="-1"></a>                    == target[k]; j++, k++);</span>
+<span id="cb7-107"><a href="#cb7-107" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-108"><a href="#cb7-108" aria-hidden="true" tabindex="-1"></a>            <span class="kw">if</span> (j == end) {</span>
+<span id="cb7-109"><a href="#cb7-109" aria-hidden="true" tabindex="-1"></a>                <span class="co">/* Found whole string. */</span></span>
+<span id="cb7-110"><a href="#cb7-110" aria-hidden="true" tabindex="-1"></a>                <span class="kw">return</span> i - sourceOffset;</span>
+<span id="cb7-111"><a href="#cb7-111" aria-hidden="true" tabindex="-1"></a>            }</span>
+<span id="cb7-112"><a href="#cb7-112" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb7-113"><a href="#cb7-113" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb7-114"><a href="#cb7-114" aria-hidden="true" tabindex="-1"></a>    <span class="kw">return</span> -<span class="dv">1</span>;</span>
+<span id="cb7-115"><a href="#cb7-115" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb7-116"><a href="#cb7-116" aria-hidden="true" tabindex="-1"></a><span class="co">// 1. 找到首字符的位置</span></span>
+<span id="cb7-117"><a href="#cb7-117" aria-hidden="true" tabindex="-1"></a><span class="co">// 2. 从首字符的位置循环比对， 都相等返回首字符的位置</span></span>
+<span id="cb7-118"><a href="#cb7-118" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-119"><a href="#cb7-119" aria-hidden="true" tabindex="-1"></a><span class="co">/**</span></span>
+<span id="cb7-120"><a href="#cb7-120" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> Returns true if and only if this string contains the specified</span>
+<span id="cb7-121"><a href="#cb7-121" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> sequence of char values<span class="co">.</span></span>
+<span id="cb7-122"><a href="#cb7-122" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span></span>
+<span id="cb7-123"><a href="#cb7-123" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">@param s </span>the sequence to search for</span>
+<span id="cb7-124"><a href="#cb7-124" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">@return </span>true if this string contains <span class="an">{@code s}</span><span class="co">,</span> false otherwise</span>
+<span id="cb7-125"><a href="#cb7-125" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">@since </span><span class="co">1.5</span></span>
+<span id="cb7-126"><a href="#cb7-126" aria-hidden="true" tabindex="-1"></a> <span class="co">*/</span></span>
+<span id="cb7-127"><a href="#cb7-127" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span> <span class="dt">boolean</span> <span class="fu">contains</span>(<span class="bu">CharSequence</span> s) {</span>
+<span id="cb7-128"><a href="#cb7-128" aria-hidden="true" tabindex="-1"></a>    <span class="kw">return</span> <span class="fu">indexOf</span>(s.<span class="fu">toString</span>()) &gt; -<span class="dv">1</span>;</span>
+<span id="cb7-129"><a href="#cb7-129" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb7-130"><a href="#cb7-130" aria-hidden="true" tabindex="-1"></a><span class="co">// indexOf 的应用， 判断是否包含指定字符串</span></span></code></pre></div>
+<h4 id="正则表达式相关">正则表达式相关</h4>
+<ul>
+<li>split</li>
+<li>replace</li>
+<li>replaceAll</li>
+</ul>
+<p>分析正则表达式时再补充。</p>
+<h3 id="静态方法">静态方法</h3>
+<h4 id="join-方法">join 方法</h4>
+<p>1.8 新加的。</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co">/**</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> Returns a new <span class="an">{@code String}</span> composed of copies of the</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">{@code CharSequence elements}</span> joined together with a copy of the</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> specified <span class="an">{@code delimiter}</span><span class="co">.</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="kw">&lt;blockquote&gt;</span>For example<span class="co">,</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="kw">&lt;pre&gt;</span><span class="co">{@</span>code</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span>     List<span class="kw">&lt;String&gt;</span> strings <span class="co">=</span> new LinkedList<span class="er">&lt;</span><span class="co">&gt;();</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span>     strings<span class="co">.</span>add<span class="co">(&quot;</span>Java<span class="co">&quot;);</span>strings<span class="co">.</span>add<span class="co">(&quot;</span>is<span class="co">&quot;);</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span>     strings<span class="co">.</span>add<span class="co">(&quot;</span>cool<span class="co">&quot;);</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span>     String message <span class="co">=</span> String<span class="co">.</span>join<span class="co">(&quot;</span> <span class="co">&quot;,</span> strings<span class="co">);</span></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span>     <span class="co">//</span>message returned is<span class="co">:</span> <span class="co">&quot;</span>Java is cool<span class="co">&quot;</span></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span></span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span>     Set<span class="kw">&lt;String&gt;</span> strings <span class="co">=</span> new LinkedHashSet<span class="er">&lt;</span><span class="co">&gt;();</span></span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span>     strings<span class="co">.</span>add<span class="co">(&quot;</span>Java<span class="co">&quot;);</span> strings<span class="co">.</span>add<span class="co">(&quot;</span>is<span class="co">&quot;);</span></span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span>     strings<span class="co">.</span>add<span class="co">(&quot;</span>very<span class="co">&quot;);</span> strings<span class="co">.</span>add<span class="co">(&quot;</span>cool<span class="co">&quot;);</span></span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span>     String message <span class="co">=</span> String<span class="co">.</span>join<span class="co">(&quot;-&quot;,</span> strings<span class="co">);</span></span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span>     <span class="co">//</span>message returned is<span class="co">:</span> <span class="co">&quot;</span>Java<span class="co">-</span>is<span class="co">-</span>very<span class="co">-</span>cool<span class="co">&quot;</span></span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="co">}</span><span class="kw">&lt;/pre&gt;&lt;/blockquote&gt;</span></span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span></span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> Note that if an individual element is <span class="an">{@code null}</span><span class="co">,</span> then <span class="an">{@code &quot;null&quot;}</span> is added<span class="co">.</span></span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span></span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">@param </span><span class="co"> </span><span class="an">delimiter </span>a sequence of characters that is used to separate each</span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span>         of the <span class="an">{@code elements}</span> in the resulting <span class="an">{@code String}</span></span>
+<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">@param </span><span class="co"> </span><span class="an">elements </span>an <span class="an">{@code Iterable}</span> that will have its <span class="an">{@code elements}</span></span>
+<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span>         joined together<span class="co">.</span></span>
+<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span></span>
+<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">@return </span>a new <span class="an">{@code String}</span> that is composed from the <span class="an">{@code elements}</span></span>
+<span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span>         argument</span>
+<span id="cb8-30"><a href="#cb8-30" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span></span>
+<span id="cb8-31"><a href="#cb8-31" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">@throws NullPointerException </span>If <span class="an">{@code delimiter}</span> or <span class="an">{@code elements}</span></span>
+<span id="cb8-32"><a href="#cb8-32" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span>         is <span class="an">{@code null}</span></span>
+<span id="cb8-33"><a href="#cb8-33" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span></span>
+<span id="cb8-34"><a href="#cb8-34" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">@see </span>   <span class="an">#</span>join<span class="an">(</span>CharSequence<span class="an">,</span>CharSequence<span class="an">...)</span></span>
+<span id="cb8-35"><a href="#cb8-35" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">@see </span>   java<span class="an">.</span>util<span class="an">.</span>StringJoiner</span>
+<span id="cb8-36"><a href="#cb8-36" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">@since </span><span class="co">1.8</span></span>
+<span id="cb8-37"><a href="#cb8-37" aria-hidden="true" tabindex="-1"></a> <span class="co">*/</span></span>
+<span id="cb8-38"><a href="#cb8-38" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span> <span class="dt">static</span> <span class="bu">String</span> <span class="fu">join</span>(<span class="bu">CharSequence</span> delimiter,</span>
+<span id="cb8-39"><a href="#cb8-39" aria-hidden="true" tabindex="-1"></a>        <span class="bu">Iterable</span>&lt;? <span class="kw">extends</span> <span class="bu">CharSequence</span>&gt; elements) {</span>
+<span id="cb8-40"><a href="#cb8-40" aria-hidden="true" tabindex="-1"></a>    Objects.<span class="fu">requireNonNull</span>(delimiter);</span>
+<span id="cb8-41"><a href="#cb8-41" aria-hidden="true" tabindex="-1"></a>    Objects.<span class="fu">requireNonNull</span>(elements);</span>
+<span id="cb8-42"><a href="#cb8-42" aria-hidden="true" tabindex="-1"></a>    StringJoiner joiner = <span class="kw">new</span> <span class="fu">StringJoiner</span>(delimiter);</span>
+<span id="cb8-43"><a href="#cb8-43" aria-hidden="true" tabindex="-1"></a>    <span class="kw">for</span> (<span class="bu">CharSequence</span> cs: elements) {</span>
+<span id="cb8-44"><a href="#cb8-44" aria-hidden="true" tabindex="-1"></a>        joiner.<span class="fu">add</span>(cs);</span>
+<span id="cb8-45"><a href="#cb8-45" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb8-46"><a href="#cb8-46" aria-hidden="true" tabindex="-1"></a>    <span class="kw">return</span> joiner.<span class="fu">toString</span>();</span>
+<span id="cb8-47"><a href="#cb8-47" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>目的是把多个字符串以指定分隔符连接起来， 主要依赖的是 StringJoiner。 StringJoiner 的逻辑也很简单，使用 StringBuilder 连接。</p>
+<h2 id="常见问题">常见问题</h2>
+<h3 id="平时开发都是直接-string-x-xxx没有使用-string-x-new-stringxxx-这两种方式有啥区别怎么选择">平时开发都是直接 <code>String x = "xxx"</code>，没有使用 <code>String x = new String("xxx")</code> ， 这两种方式有啥区别，怎么选择？</h3>
+<p>结论，使用 String x = “xxx”<br />
+通过反编译字节码可以看出两种方式的区别， 示例如下</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span> <span class="kw">class</span> StringInit {</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">public</span> <span class="dt">static</span> <span class="dt">void</span> <span class="fu">main</span>(<span class="bu">String</span>[] args) {</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">String</span> x = <span class="st">&quot;test&quot;</span>;</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">String</span> y = <span class="kw">new</span> <span class="bu">String</span>(<span class="st">&quot;test&quot;</span>);</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>反编译如下</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a> <span class="ex">0</span>: ldc           #2                  // String test</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a> <span class="ex">2</span>: astore_1</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a> <span class="ex">3</span>: new           #3                  // class java/lang/String</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a> <span class="ex">6</span>: dup</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a> <span class="ex">7</span>: ldc           #2                  // String test</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a> <span class="ex">9</span>: invokespecial #4                  // Method java/lang/String.<span class="st">&quot;&lt;init&gt;&quot;</span>:(Ljava/lang/String<span class="kw">;</span>)<span class="ex">V</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="ex">12</span>: astore_2</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a><span class="ex">13</span>: return</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a><span class="co"># ------</span></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a><span class="co"># String x = &quot;test&quot; ， 对应两条指令</span></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>       <span class="ex">0</span>: ldc           #2                  // String test</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>       <span class="ex">2</span>: astore_1</span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a><span class="ex">ldc</span> 从常量池加载字符串 test 到操作数栈栈顶</span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a><span class="ex">astore_1</span> 把操作数栈栈顶数据存到本地变量表 1 </span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a><span class="co"># String y = new String(&quot;test&quot;), 对应 5 条指令，还包含一个方法执行指令。</span></span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>       <span class="ex">3</span>: new           #3                  // class java/lang/String</span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>       <span class="ex">6</span>: dup</span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a>       <span class="ex">7</span>: ldc           #2                  // String test</span>
+<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a>       <span class="ex">9</span>: invokespecial #4                  // Method java/lang/String.<span class="st">&quot;&lt;init&gt;&quot;</span>:(Ljava/lang/String<span class="kw">;</span>)<span class="ex">V</span></span>
+<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a>      <span class="ex">12</span>: astore_2</span>
+<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a><span class="ex">new</span> 新建 String 实例，置于操作数栈栈顶。</span>
+<span id="cb10-25"><a href="#cb10-25" aria-hidden="true" tabindex="-1"></a><span class="ex">dup</span> 复制操作数栈栈顶数据，并置于操作数栈栈顶</span>
+<span id="cb10-26"><a href="#cb10-26" aria-hidden="true" tabindex="-1"></a><span class="ex">ldc</span> 从常量池加载字符串 test 到操作数栈栈顶</span>
+<span id="cb10-27"><a href="#cb10-27" aria-hidden="true" tabindex="-1"></a><span class="ex">invokespecial</span> 执行构造方法， 对应 String(String x)<span class="bu">.</span> <span class="ex">会消耗掉操作数栈顶的一个</span> String 实例。 </span>
+<span id="cb10-28"><a href="#cb10-28" aria-hidden="true" tabindex="-1"></a><span class="ex">astore_2</span> 把操作数栈栈顶数据存到本地变量表 2</span></code></pre></div>
+<p>从上面的反编译字节码可以看出 String x = “xxx” 的效率更高。</p>
+<blockquote>
+<p><strong>画外音:</strong> 总是不可避免的和字节码打交道, 就像写 C 语言不可避免的和 ASM 打交道一样。</p>
+</blockquote>
+<h3 id="xxx-yyy-是什么魔法-如果用过-c-语言会发现字符串不能直接相加"><code>"xxx" + "yyy"</code> 是什么魔法？ 如果用过 C 语言，会发现字符串不能直接相加。</h3>
+<blockquote>
+<p>The Java language provides special support for the string concatenation operator ( + ), and for conversion of other objects to strings. String concatenation is implemented through the {<span class="citation" data-cites="code">@code</span> StringBuilder}(or {<span class="citation" data-cites="code">@code</span> StringBuffer}) class and its {<span class="citation" data-cites="code">@code</span> append} method.</p>
+</blockquote>
+<p>还是编译器的魔法，编译期使用 StringBuilder append 构建的。 这是 Java 里唯一的运算符重载。 源码</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span> <span class="kw">class</span> StringPlus {</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">public</span> <span class="dt">static</span> <span class="dt">void</span> <span class="fu">main</span>(<span class="bu">String</span>[] args) {</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">String</span> a = <span class="st">&quot;aaa&quot;</span>;</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">String</span> b = <span class="st">&quot;bbb&quot;</span>;</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">String</span> c = a + b;</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>反编译</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a> <span class="ex">0</span>: ldc           #2                  // String aaa</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a> <span class="ex">2</span>: astore_1</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a> <span class="ex">3</span>: ldc           #3                  // String bbb</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a> <span class="ex">5</span>: astore_2</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a> <span class="ex">6</span>: new           #4                  // class java/lang/StringBuilder</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a> <span class="ex">9</span>: dup</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="ex">10</span>: invokespecial #5                  // Method java/lang/StringBuilder.<span class="st">&quot;&lt;init&gt;&quot;</span>:()<span class="ex">V</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a><span class="ex">13</span>: aload_1</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a><span class="ex">14</span>: invokevirtual #6                  // Method java/lang/StringBuilder.append:(Ljava/lang/String<span class="kw">;</span>)<span class="ex">Ljava/lang/StringBuilder</span>;</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a><span class="ex">17</span>: aload_2</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a><span class="ex">18</span>: invokevirtual #6                  // Method java/lang/StringBuilder.append:(Ljava/lang/String<span class="kw">;</span>)<span class="ex">Ljava/lang/StringBuilder</span>;</span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a><span class="ex">21</span>: invokevirtual #7                  // Method java/lang/StringBuilder.toString:()<span class="ex">Ljava/lang/String</span>;</span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a><span class="ex">24</span>: astore_3</span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a><span class="ex">25</span>: return</span></code></pre></div>
+<p>反编译的代码等价于如下代码</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span> <span class="kw">class</span> StringPlus {</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">public</span> <span class="dt">static</span> <span class="dt">void</span> <span class="fu">main</span>(<span class="bu">String</span>[] args) {</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">String</span> arg1 = <span class="st">&quot;aaa&quot;</span>;</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">String</span> arg2 = <span class="st">&quot;bbb&quot;</span>;</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">String</span> arg3 = <span class="kw">new</span> <span class="bu">StringBuilder</span>().<span class="fu">append</span>(args1).<span class="fu">append</span>(args2).<span class="fu">toString</span>();</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h3 id="string-的不变性什么是不可变类不可变类意味着什么怎么实现不可变类-为什么要设计为不可变类">String 的不变性，什么是不可变类，不可变类意味着什么，怎么实现不可变类, 为什么要设计为不可变类，</h3>
+<ul>
+<li>不可变类只是其实例不能被修改的类。每个实例中包含的所有信息都必须在创建该实例的时候就提供，并且在对象的整个生命周期内固定不变。<br />
+</li>
+<li>不可变类意味着实例创建后，实例的状态不能被改变。</li>
+<li>怎么实现不可变类
+<ul>
+<li>不要提供任何会修改对象状态的方法。 String 类方法不会改变自身状态，通常会返回新的字符串</li>
+<li>保证类不会被扩展。 String 类声明为 final, 无法被继承</li>
+<li>保证属性为 final， 除构造方法外， 无法被修改。</li>
+<li>保证属性为私有， 外部无法直接访问。</li>
+</ul></li>
+<li>String 为什么要设计为不可变类
+<ul>
+<li>String 被类似类加载器等虚拟机核心机制依赖</li>
+<li>String 的定位和基础类型的包装类一致, 不可变符合直觉</li>
+<li>不可变无副作用，集合业务，并发业务可无负担使用。</li>
+</ul></li>
+</ul>
+<h3 id="关于-string-intern-方法">关于 String intern 方法。</h3>
+<p>建议不用深究， 意义不大，在几个主流代码库（spring, netty, dubbo) 搜索均没有该方法的使用。</p>
+<h3 id="switch-语句与-string"><a href="https://docs.oracle.com/javase/specs/jls/se8/html/jls-14.html#jls-14.11">Switch</a> 语句与 String</h3>
+<blockquote>
+<p>The type of the Expression must be char, byte, short, int, Character, Byte, Short, Integer, String, or an enum type (§8.9), or a compile-time error occurs.</p>
+</blockquote>
+<p>JDK 1.7 的新特性，编译器做的手脚，可以通过反编译一探究竟</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span> <span class="kw">class</span> StringSwitch {</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">public</span> <span class="dt">static</span> <span class="dt">void</span> <span class="fu">main</span>(<span class="bu">String</span>[] args) {</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">String</span> test = <span class="st">&quot;test&quot;</span>;</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> result = <span class="dv">0</span>;</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">switch</span> (test){</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>     <span class="kw">case</span> <span class="st">&quot;test&quot;</span>:</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>        result = <span class="dv">1</span>;</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>        <span class="kw">break</span>;</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>     <span class="kw">case</span> <span class="st">&quot;test2&quot;</span>:</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>        result = <span class="dv">2</span>;</span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>        <span class="kw">break</span>;</span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>      <span class="kw">default</span>:</span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>        <span class="kw">break</span>;</span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>反编译代码如下</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>  <span class="ex">0</span>: ldc           #2                  // String test</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  <span class="ex">2</span>: astore_1</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  <span class="ex">3</span>: iconst_0</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>  <span class="ex">4</span>: istore_2</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>  <span class="ex">5</span>: aload_1</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>  <span class="ex">6</span>: astore_3</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>  <span class="ex">7</span>: iconst_m1</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>  <span class="ex">8</span>: istore        4</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a> <span class="ex">10</span>: aload_3</span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a> <span class="ex">11</span>: invokevirtual #3                  // Method java/lang/String.hashCode:()<span class="ex">I</span></span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a> <span class="ex">14</span>: lookupswitch  { // 2</span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>       <span class="ex">3556498</span>: 40</span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>     <span class="ex">110251488</span>: 55</span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>       <span class="ex">default</span>: 67</span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a> <span class="ex">40</span>: aload_3</span>
+<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a> <span class="ex">41</span>: ldc           #2                  // String test</span>
+<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a> <span class="ex">43</span>: invokevirtual #4                  // Method java/lang/String.equals:(Ljava/lang/Object<span class="kw">;</span>)<span class="ex">Z</span></span>
+<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a> <span class="ex">46</span>: ifeq          67</span>
+<span id="cb15-20"><a href="#cb15-20" aria-hidden="true" tabindex="-1"></a> <span class="ex">49</span>: iconst_0</span>
+<span id="cb15-21"><a href="#cb15-21" aria-hidden="true" tabindex="-1"></a> <span class="ex">50</span>: istore        4</span>
+<span id="cb15-22"><a href="#cb15-22" aria-hidden="true" tabindex="-1"></a> <span class="ex">52</span>: goto          67</span>
+<span id="cb15-23"><a href="#cb15-23" aria-hidden="true" tabindex="-1"></a> <span class="ex">55</span>: aload_3</span>
+<span id="cb15-24"><a href="#cb15-24" aria-hidden="true" tabindex="-1"></a> <span class="ex">56</span>: ldc           #5                  // String test2</span>
+<span id="cb15-25"><a href="#cb15-25" aria-hidden="true" tabindex="-1"></a> <span class="ex">58</span>: invokevirtual #4                  // Method java/lang/String.equals:(Ljava/lang/Object<span class="kw">;</span>)<span class="ex">Z</span></span>
+<span id="cb15-26"><a href="#cb15-26" aria-hidden="true" tabindex="-1"></a> <span class="ex">61</span>: ifeq          67</span>
+<span id="cb15-27"><a href="#cb15-27" aria-hidden="true" tabindex="-1"></a> <span class="ex">64</span>: iconst_1</span>
+<span id="cb15-28"><a href="#cb15-28" aria-hidden="true" tabindex="-1"></a> <span class="ex">65</span>: istore        4</span>
+<span id="cb15-29"><a href="#cb15-29" aria-hidden="true" tabindex="-1"></a> <span class="ex">67</span>: iload         4</span>
+<span id="cb15-30"><a href="#cb15-30" aria-hidden="true" tabindex="-1"></a> <span class="ex">69</span>: lookupswitch  { // 2</span>
+<span id="cb15-31"><a href="#cb15-31" aria-hidden="true" tabindex="-1"></a>             <span class="ex">0</span>: 96</span>
+<span id="cb15-32"><a href="#cb15-32" aria-hidden="true" tabindex="-1"></a>             <span class="ex">1</span>: 101</span>
+<span id="cb15-33"><a href="#cb15-33" aria-hidden="true" tabindex="-1"></a>       <span class="ex">default</span>: 106</span>
+<span id="cb15-34"><a href="#cb15-34" aria-hidden="true" tabindex="-1"></a>   }</span>
+<span id="cb15-35"><a href="#cb15-35" aria-hidden="true" tabindex="-1"></a> <span class="ex">96</span>: iconst_1</span>
+<span id="cb15-36"><a href="#cb15-36" aria-hidden="true" tabindex="-1"></a> <span class="ex">97</span>: istore_2</span>
+<span id="cb15-37"><a href="#cb15-37" aria-hidden="true" tabindex="-1"></a> <span class="ex">98</span>: goto          106</span>
+<span id="cb15-38"><a href="#cb15-38" aria-hidden="true" tabindex="-1"></a><span class="ex">101</span>: iconst_2</span>
+<span id="cb15-39"><a href="#cb15-39" aria-hidden="true" tabindex="-1"></a><span class="ex">102</span>: istore_2</span>
+<span id="cb15-40"><a href="#cb15-40" aria-hidden="true" tabindex="-1"></a><span class="ex">103</span>: goto          106</span>
+<span id="cb15-41"><a href="#cb15-41" aria-hidden="true" tabindex="-1"></a><span class="ex">106</span>: return</span></code></pre></div>
+<p>可以看到最终转化成 lookupswitch 指令。<br />
+3556498 是字符串 “test” 的 hashCode<br />
+110251488 是字符串 “test2” 的 hashCode</p>
+<p>最终还是使用了 int 来实现 switch 的。 处理方式跟对 enum 类型支持是一样的。</p>
+<h2 id="补充">补充</h2>
+<h3 id="string-的不变性可以通过反射绕过">String 的不变性可以通过反射绕过。</h3>
+<div class="sourceCode" id="cb16"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>  <span class="co">// 改变字符串</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">private</span> <span class="dt">static</span> <span class="dt">void</span> <span class="fu">test_reflection</span>() {</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">String</span> test = <span class="st">&quot;test&quot;</span>;</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">try</span> {</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>      <span class="bu">Field</span> filed = <span class="bu">String</span>.<span class="fu">class</span>.<span class="fu">getDeclaredField</span>(<span class="st">&quot;value&quot;</span>);</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>      filed.<span class="fu">setAccessible</span>(<span class="kw">true</span>);</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>      <span class="dt">char</span>[] val = (<span class="dt">char</span>[]) filed.<span class="fu">get</span>(test);</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>      val[<span class="dv">0</span>] = <span class="ch">&#39;T&#39;</span>;</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>      <span class="fu">assertEquals</span>(<span class="st">&quot;Test&quot;</span>, test);</span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>    } <span class="kw">catch</span> (<span class="bu">NoSuchFieldException</span> | <span class="bu">IllegalAccessException</span> e) {</span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>      e.<span class="fu">printStackTrace</span>();</span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
+<h2 id="后记">后记</h2>
+<ol type="1">
+<li>暂不分析 native 方法实现</li>
+<li>一家之言， 难免疏忽</li>
+</ol>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://emacsist.github.io/2017/07/01/jdk-%E4%B9%8B-string-%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB%E7%AC%94%E8%AE%B0/">JDK 之 String 源码阅读笔记</a></li>
+<li><a href="https://juejin.im/post/59fffddc5188253d6816f9c1">String源码分析</a></li>
+<li><a href="https://tech.meituan.com/2014/03/06/in-depth-understanding-string-intern.html">深入解析String#intern</a></li>
+<li><a href="https://juejin.im/post/59cef72b518825276f49fe40">String 为什么不可变 ?</a></li>
+</ul>
+</div>
+</div>
+</div>
+</main>
+
+<div class="wrapper">
+<div id="disqus_thread"></div>
+<script>
+
+/**
+*  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+*  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
+var disqus_config = function () {
+this.page.url = "https://www.guxingke.com//wiki/java-lang-String-source.html";  // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = ""; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+s.src = 'https://guxingke.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+
+
+<footer class="site-footer">
+<div class="wrapper">
+<div class="footer-col-wrapper">
+<div class="footer-col footer-col-1">
+
+<a href="/page/about.html">
+<span class="icon icon--me">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+<path d="M20 21.193l-.003.807h-19.993l-.004-.833c-.009-2.224.088-3.495 2.647-4.086 2.805-.647 5.573-1.227 4.242-3.682-3.943-7.275-1.123-11.399 3.111-11.399 4.153 0 7.043 3.971 3.11 11.398-1.292 2.44 1.375 3.02 4.242 3.682 2.57.594 2.657 1.873 2.648 4.113zm4-17.193h-7v2h7v-2zm0 4h-7v2h7v-2zm0 4h-7v2h7v-2z"></path>
+</svg>
+</span>
+</a>
+
+<a href="/page/projects.html">
+<span class="icon icon--project">
+<svg t="1563598923914" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="1567" width="24" height="24"><path d="M775 536.2 456.8 536.2c-26 0-47-21-47-47 0-26 21-47 47-47l318.2 0c26 0 47 21 47 47C822 515.2 800.8 536.2 775 536.2L775 536.2z" p-id="1568"></path><path d="M775 722.2 456.8 722.2c-26 0-47-21-47-47s21-47 47-47l318.2 0c26 0 47 21 47 47S800.8 722.2 775 722.2L775 722.2z" p-id="1569"></path><path d="M991 875.8 991 281.4c0-72.2-65.8-65.4-65.8-65.4s-392.8 0.4-371.8 0c-22.4 0.4-33.8-11.8-33.8-11.8s-15.6-27-43.8-69.4c-29.4-44.6-63.6-37.4-63.6-37.4L123 97.4C42.8 97.4 42 174.6 42 174.6L42 872c0 86 65 75.4 65 75.4l824.2 0C1000.8 947.4 991 875.8 991 875.8L991 875.8zM932 840.6c0 26.6-21.4 48-48 48L149 888.6c-26.6 0-48-21.4-48-48L101 343c0-26.6 21.4-48 48-48L884 295c26.6 0 48 21.4 48 48L932 840.6 932 840.6z" p-id="1570"></path><path d="M282.2 489.2m-50.2 0a25.1 25.1 0 1 0 100.4 0 25.1 25.1 0 1 0-100.4 0Z" p-id="1571"></path><path d="M282.2 675.2m-50.2 0a25.1 25.1 0 1 0 100.4 0 25.1 25.1 0 1 0-100.4 0Z" p-id="1572"></path></svg>
+</span>
+</a>
+
+<a href="https://github.com/guxingke">
+<span class="icon icon--github">
+<svg viewBox="0 0 16 16">
+<path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"></path>
+</svg>
+</span>
+</a>
+
+<a href="https://twitter.com/guxingke">
+<span class="icon icon--twitter">
+<svg viewBox="0 0 16 16">
+<path fill="#828282" d="M15.969,3.058c-0.586,0.26-1.217,0.436-1.878,0.515c0.675-0.405,1.194-1.045,1.438-1.809c-0.632,0.375-1.332,0.647-2.076,0.793c-0.596-0.636-1.446-1.033-2.387-1.033c-1.806,0-3.27,1.464-3.27,3.27 c0,0.256,0.029,0.506,0.085,0.745C5.163,5.404,2.753,4.102,1.14,2.124C0.859,2.607,0.698,3.168,0.698,3.767 c0,1.134,0.577,2.135,1.455,2.722C1.616,6.472,1.112,6.325,0.671,6.08c0,0.014,0,0.027,0,0.041c0,1.584,1.127,2.906,2.623,3.206 C3.02,9.402,2.731,9.442,2.433,9.442c-0.211,0-0.416-0.021-0.615-0.059c0.416,1.299,1.624,2.245,3.055,2.271 c-1.119,0.877-2.529,1.4-4.061,1.4c-0.264,0-0.524-0.015-0.78-0.046c1.447,0.928,3.166,1.469,5.013,1.469 c6.015,0,9.304-4.983,9.304-9.304c0-0.142-0.003-0.283-0.009-0.423C14.976,4.29,15.531,3.714,15.969,3.058z"></path>
+</svg>
+</span>
+</a>
+
+<a href="/page/links.html">
+<span class="icon icon--links">
+<svg t="1597890241324" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2110" width="24" height="24"><path d="M262.4 1017.6c-64 0-128-25.6-179.2-76.8-102.4-102.4-102.4-262.4 0-364.8l134.4-134.4 89.6 89.6-134.4 134.4c-51.2 51.2-51.2 128 0 179.2 51.2 51.2 128 51.2 179.2 0l179.2-179.2c25.6-25.6 38.4-57.6 38.4-89.6S556.8 512 537.6 486.4L467.2 422.4l89.6-89.6 70.4 70.4C672 448 697.6 512 697.6 582.4c0 70.4-25.6 134.4-76.8 179.2l-179.2 179.2C396.8 992 326.4 1017.6 262.4 1017.6zM467.2 691.2 396.8 627.2c-102.4-102.4-102.4-262.4 0-364.8l179.2-179.2c102.4-102.4 262.4-102.4 364.8 0 102.4 102.4 102.4 262.4 0 364.8l-134.4 134.4-89.6-89.6 134.4-134.4c51.2-51.2 51.2-128 0-179.2-51.2-51.2-134.4-51.2-179.2 0L486.4 352c-51.2 51.2-51.2 128 0 179.2l70.4 70.4L467.2 691.2z" p-id="2111"></path></svg>
+</svg>
+</span>
+</a>
+
+</div>
+</div>
+</div>
+</footer>
+</body>
+</html>

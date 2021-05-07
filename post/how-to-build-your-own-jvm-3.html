@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+<title>如何构建你自己的 JVM (2) HelloWorld</title>
+<style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+</style>
+<style>
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+  position: relative; left: -1em; text-align: right; vertical-align: baseline;
+  border: none; display: inline-block;
+  -webkit-touch-callout: none; -webkit-user-select: none;
+  -khtml-user-select: none; -moz-user-select: none;
+  -ms-user-select: none; user-select: none;
+  padding: 0 4px; width: 4em;
+  background-color: #232629;
+  color: #7a7c7d;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #7a7c7d;  padding-left: 4px; }
+div.sourceCode
+{ color: #cfcfc2; background-color: #232629; }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span { color: #cfcfc2; } /* Normal */
+code span.al { color: #95da4c; background-color: #4d1f24; font-weight: bold; } /* Alert */
+code span.an { color: #3f8058; } /* Annotation */
+code span.at { color: #2980b9; } /* Attribute */
+code span.bn { color: #f67400; } /* BaseN */
+code span.bu { color: #7f8c8d; } /* BuiltIn */
+code span.cf { color: #fdbc4b; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #3daee9; } /* Char */
+code span.cn { color: #27aeae; font-weight: bold; } /* Constant */
+code span.co { color: #7a7c7d; } /* Comment */
+code span.cv { color: #7f8c8d; } /* CommentVar */
+code span.do { color: #a43340; } /* Documentation */
+code span.dt { color: #2980b9; } /* DataType */
+code span.dv { color: #f67400; } /* DecVal */
+code span.er { color: #da4453; text-decoration: underline; } /* Error */
+code span.ex { color: #0099ff; font-weight: bold; } /* Extension */
+code span.fl { color: #f67400; } /* Float */
+code span.fu { color: #8e44ad; } /* Function */
+code span.im { color: #27ae60; } /* Import */
+code span.in { color: #c45b00; } /* Information */
+code span.kw { color: #cfcfc2; font-weight: bold; } /* Keyword */
+code span.op { color: #cfcfc2; } /* Operator */
+code span.ot { color: #27ae60; } /* Other */
+code span.pp { color: #27ae60; } /* Preprocessor */
+code span.re { color: #2980b9; background-color: #153042; } /* RegionMarker */
+code span.sc { color: #3daee9; } /* SpecialChar */
+code span.ss { color: #da4453; } /* SpecialString */
+code span.st { color: #f44f4f; } /* String */
+code span.va { color: #27aeae; } /* Variable */
+code span.vs { color: #da4453; } /* VerbatimString */
+code span.wa { color: #da4453; } /* Warning */
+</style>
+<!--[if lt IE 9]>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+<![endif]-->
+<link rel="stylesheet" href="/assets/main.css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-F2PYD8JK1Z"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-F2PYD8JK1Z');
+</script>
+</head>
+<body>
+<header class="site-header" role="banner">
+<div class="wrapper">
+  <a class="site-title" href="/">孤星可</a>
+
+  <nav><ul class="nav-list clearfix">
+    <li class="nav-item"><a href="/" alt="首页" title="首页">首页</a></li>
+    <li class="nav-item"><a href="/wiki/index.html" alt="Wiki" title="Wiki">Wiki</a></li>
+    <li class="nav-item"><a href="/page/about.html" alt="关于" title="关于">关于</a></li>
+  </ul></nav>
+
+  <span class="site-desc">人生天地间 忽如远行客</span>
+</div>
+</header>
+
+<main class="page-content" aria-label="Content">
+<div class="wrapper">
+<div class="post">
+<h3 class="post-title">如何构建你自己的 JVM (2) HelloWorld</h3>
+<div class="post-date"><span>最后修改时间<span> 2021-05-07</div>
+<div class="post-meta">
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#x00-解释器复习">0x00 解释器复习</a></li>
+<li><a href="#x01-指令从哪里来">0x01 指令从哪里来?</a>
+<ul>
+<li><a href="#class-文件">class 文件</a></li>
+<li><a href="#指令解释">指令解释</a></li>
+<li><a href="#解析-class-文件-获取-main-方法字节码指令">解析 class 文件, 获取 main 方法字节码指令</a></li>
+</ul></li>
+<li><a href="#x02-指令有了-然后呢">0x02 指令有了, 然后呢</a></li>
+<li><a href="#x03-方法调用怎么玩">0x03 方法调用怎么玩</a>
+<ul>
+<li><a href="#invokevirtual-的简单实现.">invokevirtual 的简单实现.</a></li>
+</ul></li>
+<li><a href="#x04-hello-world-成就达成">0x04 Hello World 成就达成</a>
+<ul>
+<li><a href="#图解执行流程.">图解执行流程.</a></li>
+</ul></li>
+<li><a href="#x05-更复杂一点的例子">0x05 更复杂一点的例子</a></li>
+<li><a href="#源码及使用">源码及使用</a></li>
+<li><a href="#x06-小结">0x06 小结</a></li>
+<li><a href="#x07-预告">0x07 预告</a></li>
+<li><a href="#x08-faq">0x08 FAQ</a></li>
+<li><a href="#x09-相关链接">0x09 相关链接</a></li>
+<li><a href="#x10-尾记">0x10 尾记</a></li>
+</ul>
+</nav>
+</div>
+<div class="post-content">
+<blockquote>
+<p>凡是过往 皆为序章</p>
+</blockquote>
+<p>之前两篇算是开端, 对解释器有个基本印象, 但是如何与 Java 世界关联起来, 似乎又有些模糊, 此篇正式进入 Java 世界.<br />
+按照惯例, 自然是要写个 HelloWorld , 对于构建一个简单的 JVM 来说, HelloWorld 会是个样子呢?</p>
+<p>HelloWorld.java</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span> <span class="kw">class</span> HelloWorld {</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">public</span> <span class="dt">static</span> <span class="dt">void</span> <span class="fu">main</span>(<span class="bu">String</span>[] args) {</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> val = <span class="dv">1</span>;</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="bu">System</span>.<span class="fu">out</span>.<span class="fu">println</span>(val);</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>案例如上图, 在控制台输出数字 1 .</p>
+<p>[[ 为什么输出 1, 按照惯例不是应该输出 Hello World ? =&gt; 涉及到字符串的话, 程序就会复杂许多, 精简起见, 输出 1 已然足够 ]]</p>
+<h2 id="x00-解释器复习">0x00 解释器复习</h2>
+<figure>
+<img src="http://assets.processon.com/chart_image/5dfc461be4b0b6bdf104330a.png" alt="mini-jvm-1" /><figcaption aria-hidden="true">mini-jvm-1</figcaption>
+</figure>
+<h2 id="x01-指令从哪里来">0x01 指令从哪里来?</h2>
+<p>若是写 JVM , 那指令自然指的是 字节码指令, 自然是从 class 文件中解析而来.</p>
+<h3 id="class-文件">class 文件</h3>
+<p>如何生成 class 文件? 针对上面的案例, 可使用 javac 编译得到.<br />
+针对案例.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">javac</span> HelloWorld.java </span></code></pre></div>
+<p>当前目录会生成 HelloWorld.class 文件.</p>
+<p>class 文件本质上是一个更为紧凑的源码, 以便于机器解析.</p>
+<p>如何查看 class 文件内容, 可以使用 JDK 自带工具 javap, javap 有很多选项, 暂时只关注 -c (对代码进行反汇编).</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">javap</span> -c HelloWorld</span></code></pre></div>
+<p>输出如下, 行号是额外添加的.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="ex">1</span>  Compiled from <span class="st">&quot;HelloWorld.java&quot;</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="ex">2</span>  public class HelloWorld {</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="ex">3</span>   public HelloWorld();</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="ex">4</span>     Code:</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="ex">5</span>        0: aload_0</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="ex">6</span>        1: invokespecial #1                  // Method java/lang/Object.<span class="st">&quot;&lt;init&gt;&quot;</span>:()<span class="ex">V</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="ex">7</span>        4: return</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="ex">8</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="ex">9</span>   public static void main(java.lang.String[]);</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="ex">10</span>    Code:</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="ex">11</span>       0: iconst_1</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="ex">12</span>       1: istore_1</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="ex">13</span>       2: getstatic     #2                  // Field java/lang/System.out:Ljava/io/PrintStream<span class="kw">;</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a><span class="ex">14</span>       5: iload_1</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a><span class="ex">15</span>       6: invokevirtual #3                  // Method java/io/PrintStream.println:(I)<span class="ex">V</span></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a><span class="ex">16</span>       9: return</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a><span class="ex">17</span> }</span></code></pre></div>
+<p>连蒙带猜, 想必也能想到上方 11-16 行对应着源代码的 main 方法体内容. 其他内容可暂时忽略.</p>
+<h3 id="指令解释">指令解释</h3>
+<p>具体指令可参阅 <a href="https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-6.html#jvms-6.5">官方说明</a></p>
+<p>格式说明, [指令位置]: [指令] [指令参数]<br />
+e.g<br />
+0: iconst_1 , 指令位置 0, 指令为 iconst_1 , 无参数.</p>
+<p>案例涉及到的指令说明</p>
+<ul>
+<li>iconst_1: 将整数 1 push 到操作数栈顶.</li>
+<li>istore_1: 将操作数栈顶整数推出, 并存放到本地变量表 index 为 1 的位置.</li>
+<li>getstatic: 获取静态变量, 并 push 到操作数栈顶.</li>
+<li>iload_1: 取出本地变量表 index 为 1 的整数, 并 push 到操作数栈顶</li>
+<li>invokevirtual: 调用方法.</li>
+<li>return: 退出当前方法调用.</li>
+</ul>
+<h3 id="解析-class-文件-获取-main-方法字节码指令">解析 class 文件, 获取 main 方法字节码指令</h3>
+<p>本质上是提供一个方法, 参数为 class 文件名, 结果为 解析后的指令集合.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span> <span class="dt">static</span> <span class="bu">List</span>&lt;Inst&gt; <span class="fu">parseInst</span>(<span class="bu">String</span> classfilePath) {</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="co">// 实现</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>} </span></code></pre></div>
+<h4 id="class-文件格式">class 文件格式</h4>
+<p><a href="https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.1">官方 The ClassFile Structure</a><br />
+就案例而言, 了解即可.</p>
+<h4 id="上代码">上代码</h4>
+<div class="sourceCode" id="cb6"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="bu">List</span>&lt;Inst&gt; insts = <span class="kw">new</span> <span class="bu">ArrayList</span>&lt;&gt;();</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>Inst inst = <span class="kw">null</span>;</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="kw">while</span> (len &gt; <span class="dv">0</span>) {</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> code = is.<span class="fu">readUnsignedByte</span>();</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">switch</span> (code) {</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>        <span class="kw">case</span> <span class="bn">0x03</span>:</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>            inst = <span class="kw">new</span> <span class="fu">IConst0</span>();</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>            <span class="kw">break</span>;</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>        <span class="kw">case</span> <span class="bn">0x04</span>:</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>            inst = <span class="kw">new</span> <span class="fu">IConst1</span>();</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>            <span class="kw">break</span>;</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>        <span class="kw">case</span> <span class="bn">0x3c</span>:</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>            inst = <span class="kw">new</span> <span class="fu">IStore1</span>();</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>            <span class="kw">break</span>;</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>        <span class="kw">case</span> <span class="bn">0x3d</span>:</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>            inst = <span class="kw">new</span> <span class="fu">IStore2</span>();</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>            <span class="kw">break</span>;</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>        <span class="kw">case</span> <span class="bn">0x10</span>:</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>            inst = <span class="kw">new</span> <span class="fu">Bipush</span>(is.<span class="fu">readByte</span>());</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>            <span class="kw">break</span>;</span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>        <span class="kw">case</span> <span class="bn">0xa3</span>:</span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>            inst = <span class="kw">new</span> <span class="fu">IfIcmpGt</span>(is.<span class="fu">readShort</span>());</span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>            <span class="kw">break</span>;</span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>        <span class="kw">case</span> <span class="bn">0x60</span>:</span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>            inst = <span class="kw">new</span> <span class="fu">Iadd</span>();</span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>            <span class="kw">break</span>;</span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a>        <span class="kw">case</span> <span class="bn">0x84</span>:</span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a>            inst = <span class="kw">new</span> <span class="fu">Iinc</span>(is.<span class="fu">readUnsignedByte</span>(), is.<span class="fu">readByte</span>());</span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a>            <span class="kw">break</span>;</span>
+<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a>        <span class="kw">case</span> <span class="bn">0xa7</span>:</span>
+<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a>            inst = <span class="kw">new</span> <span class="fu">Goto</span>(is.<span class="fu">readShort</span>());</span>
+<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a>            <span class="kw">break</span>;</span>
+<span id="cb6-33"><a href="#cb6-33" aria-hidden="true" tabindex="-1"></a>        <span class="kw">case</span> <span class="bn">0x1b</span>:</span>
+<span id="cb6-34"><a href="#cb6-34" aria-hidden="true" tabindex="-1"></a>            inst = <span class="kw">new</span> <span class="fu">ILoad1</span>();</span>
+<span id="cb6-35"><a href="#cb6-35" aria-hidden="true" tabindex="-1"></a>            <span class="kw">break</span>;</span>
+<span id="cb6-36"><a href="#cb6-36" aria-hidden="true" tabindex="-1"></a>        <span class="kw">case</span> <span class="bn">0x1c</span>:</span>
+<span id="cb6-37"><a href="#cb6-37" aria-hidden="true" tabindex="-1"></a>            inst = <span class="kw">new</span> <span class="fu">ILoad2</span>();</span>
+<span id="cb6-38"><a href="#cb6-38" aria-hidden="true" tabindex="-1"></a>            <span class="kw">break</span>;</span>
+<span id="cb6-39"><a href="#cb6-39" aria-hidden="true" tabindex="-1"></a>        <span class="kw">case</span> <span class="bn">0xb1</span>:</span>
+<span id="cb6-40"><a href="#cb6-40" aria-hidden="true" tabindex="-1"></a>            inst = <span class="kw">new</span> <span class="fu">Return</span>();</span>
+<span id="cb6-41"><a href="#cb6-41" aria-hidden="true" tabindex="-1"></a>            <span class="kw">break</span>;</span>
+<span id="cb6-42"><a href="#cb6-42" aria-hidden="true" tabindex="-1"></a>        <span class="kw">case</span> <span class="bn">0xb2</span>:</span>
+<span id="cb6-43"><a href="#cb6-43" aria-hidden="true" tabindex="-1"></a>            is.<span class="fu">readUnsignedShort</span>();</span>
+<span id="cb6-44"><a href="#cb6-44" aria-hidden="true" tabindex="-1"></a>            inst = <span class="kw">new</span> <span class="fu">Getstatic</span>();</span>
+<span id="cb6-45"><a href="#cb6-45" aria-hidden="true" tabindex="-1"></a>            <span class="kw">break</span>;</span>
+<span id="cb6-46"><a href="#cb6-46" aria-hidden="true" tabindex="-1"></a>        <span class="kw">case</span> <span class="bn">0xb6</span>:</span>
+<span id="cb6-47"><a href="#cb6-47" aria-hidden="true" tabindex="-1"></a>            is.<span class="fu">readUnsignedShort</span>();</span>
+<span id="cb6-48"><a href="#cb6-48" aria-hidden="true" tabindex="-1"></a>            inst = <span class="kw">new</span> <span class="fu">Invokevirtual</span>();</span>
+<span id="cb6-49"><a href="#cb6-49" aria-hidden="true" tabindex="-1"></a>            <span class="kw">break</span>;</span>
+<span id="cb6-50"><a href="#cb6-50" aria-hidden="true" tabindex="-1"></a>        <span class="kw">default</span>:</span>
+<span id="cb6-51"><a href="#cb6-51" aria-hidden="true" tabindex="-1"></a>            <span class="kw">throw</span> <span class="kw">new</span> <span class="bu">UnsupportedOperationException</span>();</span>
+<span id="cb6-52"><a href="#cb6-52" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb6-53"><a href="#cb6-53" aria-hidden="true" tabindex="-1"></a>    len -= inst.<span class="fu">offset</span>();</span>
+<span id="cb6-54"><a href="#cb6-54" aria-hidden="true" tabindex="-1"></a>    insts.<span class="fu">add</span>(inst);</span>
+<span id="cb6-55"><a href="#cb6-55" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>核心代码如上, 主要是根据不同的情况解析出不同的指令. 并不复杂, 体力活. 对照着官方文档解析即可得到.</p>
+<h2 id="x02-指令有了-然后呢">0x02 指令有了, 然后呢</h2>
+<p>与解释器联动起来, 解释上一步解析得到的指令, 由于解释器上篇已实现, 此处就不过多解释, 核心代码如下.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="bu">List</span>&lt;Inst&gt; insts = <span class="fu">parseInst</span>(path + <span class="st">&quot;.class&quot;</span>);</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="co">// 由于 jvm 指令有步长的概念, 此处需要转为map.</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="bu">Map</span>&lt;<span class="bu">Integer</span>, Inst&gt; instructions = <span class="fu">genInstructions</span>(insts);</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="co">// 10 是临时写死, 实际应从 class 文件中解析得到.</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="bu">Frame</span> frame = <span class="kw">new</span> <span class="bu">Frame</span>(<span class="dv">10</span>, <span class="dv">10</span>);</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="kw">while</span> (<span class="kw">true</span>) {</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>  <span class="dt">int</span> pc = frame.<span class="fu">pc</span>;</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>  Inst inst = instructions.<span class="fu">get</span>(pc);</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>  <span class="kw">if</span> (inst == <span class="kw">null</span>) {</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>    <span class="kw">break</span>;</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>  inst.<span class="fu">execute</span>(frame);</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>  <span class="kw">if</span> (pc == frame.<span class="fu">pc</span>) {</span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>    frame.<span class="fu">pc</span> += inst.<span class="fu">offset</span>();</span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>与上篇提到的三个解释器大体相仿.</p>
+<h2 id="x03-方法调用怎么玩">0x03 方法调用怎么玩</h2>
+<p>简单来讲, 就是个交换的问题, 用入参(即当前操作数栈的对象), 换一个返回值(放到当前栈顶)或者副作用(比如输入信息).</p>
+<p>就案例来讲, 就是消耗掉栈的两个对象, 产生副作用(输出到控制台).</p>
+<p>更复杂方法调用, 核心依然是上方的交换, 暂不讨论.</p>
+<h3 id="invokevirtual-的简单实现.">invokevirtual 的简单实现.</h3>
+<div class="sourceCode" id="cb8"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span> <span class="dt">void</span> <span class="fu">execute</span>(<span class="bu">Frame</span> frame) {</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">Object</span> val = frame.<span class="fu">operandStack</span>.<span class="fu">pop</span>();  <span class="co">// 操作数栈顶, 即为要输出的值</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">Object</span> thisObj = frame.<span class="fu">operandStack</span>.<span class="fu">pop</span>(); <span class="co">// 其次是 System.out 这个静态变量, 暂时忽略实现. </span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">System</span>.<span class="fu">out</span>.<span class="fu">println</span>(val);  <span class="co">// 利用宿主 JVM 输出. </span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h2 id="x04-hello-world-成就达成">0x04 Hello World 成就达成</h2>
+<div class="sourceCode" id="cb9"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>$ <span class="ex">java</span> -cp target/interpreter-demo.jar com.gxk.demo.jvm.JvmDemo HelloWorld</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>=<span class="op">&gt;</span> <span class="ex">1</span></span></code></pre></div>
+<h3 id="图解执行流程.">图解执行流程.</h3>
+<figure>
+<img src="https://raw.githubusercontent.com/guxingke/oss/master/blog/int-hw.gif" alt="int-hw" /><figcaption aria-hidden="true">int-hw</figcaption>
+</figure>
+<h2 id="x05-更复杂一点的例子">0x05 更复杂一点的例子</h2>
+<p>求 1,2,3..100 的和, 并输出.</p>
+<p>Sum100.java</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span> <span class="kw">class</span> Sum100 {</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">public</span> <span class="dt">static</span> <span class="dt">void</span> <span class="fu">main</span>(<span class="bu">String</span>[] args) {</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> sum = <span class="dv">0</span>;</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">for</span> (<span class="dt">int</span> i = <span class="dv">1</span>; i &lt;= <span class="dv">100</span>; i++) {</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>      sum += i;</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>    <span class="bu">System</span>.<span class="fu">out</span>.<span class="fu">println</span>(sum);</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>编译并解释</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>$ <span class="ex">javac</span> Sum100.java</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>$ <span class="ex">java</span> -cp target/interpreter-demo.jar com.gxk.demo.jvm.JvmDemo Sum100</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>=<span class="op">&gt;</span> <span class="ex">5050</span></span></code></pre></div>
+<h2 id="源码及使用">源码及使用</h2>
+<p>源码托管于 github, <a href="https://github.com/guxingke/demo/commit/6ecd2b6a0ff8288cb7b34cbc521a2d6f92580132">commit 传送门</a></p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> clone https://github.com/guxingke/demo.git</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> demo/interpreter-demo </span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="ex">mvn</span> package</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="co"># HelloWorld</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="ex">java</span> HelloWorld.java</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a><span class="ex">java</span> -cp target/interpreter-demo.jar com.gxk.demo.jvm.JvmDemo Sum100</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a><span class="ex">javac</span> Sum100.java</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a><span class="ex">java</span> -cp target/interpreter-demo.jar com.gxk.demo.jvm.JvmDemo Sum100</span></code></pre></div>
+<h2 id="x06-小结">0x06 小结</h2>
+<p>承接上篇, 使用单文件(300行代码)实现了一个简单的 JVM, 把 Java 世界 class 文件内的字节码指令解析出来, 并解释. 对于有兴趣入坑的同学来讲, 应该是个不错的案例.</p>
+<h2 id="x07-预告">0x07 预告</h2>
+<p>如果想了解更多, 可以关注 <a href="https://www.github.com/guxingke/mini-jvm">mini-jvm</a> 项目, 以上文提到的解释器为核心, Java 的一些语言特性基本实现.</p>
+<h2 id="x08-faq">0x08 FAQ</h2>
+<p>系列还会有下一篇? 暂时不会有了, 解释器的核心已经就位, 一些语言特性就是逐步迭代了.</p>
+<h2 id="x09-相关链接">0x09 相关链接</h2>
+<ul>
+<li><a href="https://www.guxingke.com/posts/how-to-build-your-own-jvm-1.html">如何构建你自己的 JVM (0) 概述</a></li>
+<li><a href="https://www.guxingke.com/posts/how-to-build-your-own-jvm-2.html">如何构建你自己的 JVM (1) 解释器</a></li>
+<li><a href="https://www.guxingke.com/posts/how-to-build-your-own-jvm-3.html">如何构建你自己的 JVM (2) Hello World</a></li>
+<li><a href="https://github.com/guxingke/demo">Demo 源码地址</a></li>
+<li><a href="https://github.com/guxingke/mini-jvm">使用 JDK8 实现 JVM</a></li>
+</ul>
+<h2 id="x10-尾记">0x10 尾记</h2>
+<p>系列告一段落, 暂时不会更新了,个人杂记,难免会有疏漏错误, 如有兴趣, 有问题, 请反馈于我(评论,issue,邮件均欢迎). 再次感谢阅读.</p>
+</div>
+</div>
+</div>
+</main>
+
+<div class="wrapper">
+<div id="disqus_thread"></div>
+<script>
+
+/**
+*  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+*  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
+var disqus_config = function () {
+this.page.url = "https://www.guxingke.com//post/how-to-build-your-own-jvm-3.html";  // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = ""; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+s.src = 'https://guxingke.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+
+
+
+
+<footer class="site-footer">
+<div class="wrapper">
+<div class="footer-col-wrapper">
+<div class="footer-col footer-col-1">
+
+<a href="/page/about.html">
+<span class="icon icon--me">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+<path d="M20 21.193l-.003.807h-19.993l-.004-.833c-.009-2.224.088-3.495 2.647-4.086 2.805-.647 5.573-1.227 4.242-3.682-3.943-7.275-1.123-11.399 3.111-11.399 4.153 0 7.043 3.971 3.11 11.398-1.292 2.44 1.375 3.02 4.242 3.682 2.57.594 2.657 1.873 2.648 4.113zm4-17.193h-7v2h7v-2zm0 4h-7v2h7v-2zm0 4h-7v2h7v-2z"></path>
+</svg>
+</span>
+</a>
+
+<a href="/page/projects.html">
+<span class="icon icon--project">
+<svg t="1563598923914" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="1567" width="24" height="24"><path d="M775 536.2 456.8 536.2c-26 0-47-21-47-47 0-26 21-47 47-47l318.2 0c26 0 47 21 47 47C822 515.2 800.8 536.2 775 536.2L775 536.2z" p-id="1568"></path><path d="M775 722.2 456.8 722.2c-26 0-47-21-47-47s21-47 47-47l318.2 0c26 0 47 21 47 47S800.8 722.2 775 722.2L775 722.2z" p-id="1569"></path><path d="M991 875.8 991 281.4c0-72.2-65.8-65.4-65.8-65.4s-392.8 0.4-371.8 0c-22.4 0.4-33.8-11.8-33.8-11.8s-15.6-27-43.8-69.4c-29.4-44.6-63.6-37.4-63.6-37.4L123 97.4C42.8 97.4 42 174.6 42 174.6L42 872c0 86 65 75.4 65 75.4l824.2 0C1000.8 947.4 991 875.8 991 875.8L991 875.8zM932 840.6c0 26.6-21.4 48-48 48L149 888.6c-26.6 0-48-21.4-48-48L101 343c0-26.6 21.4-48 48-48L884 295c26.6 0 48 21.4 48 48L932 840.6 932 840.6z" p-id="1570"></path><path d="M282.2 489.2m-50.2 0a25.1 25.1 0 1 0 100.4 0 25.1 25.1 0 1 0-100.4 0Z" p-id="1571"></path><path d="M282.2 675.2m-50.2 0a25.1 25.1 0 1 0 100.4 0 25.1 25.1 0 1 0-100.4 0Z" p-id="1572"></path></svg>
+</span>
+</a>
+
+<a href="https://github.com/guxingke">
+<span class="icon icon--github">
+<svg viewBox="0 0 16 16">
+<path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"></path>
+</svg>
+</span>
+</a>
+
+<a href="https://twitter.com/guxingke">
+<span class="icon icon--twitter">
+<svg viewBox="0 0 16 16">
+<path fill="#828282" d="M15.969,3.058c-0.586,0.26-1.217,0.436-1.878,0.515c0.675-0.405,1.194-1.045,1.438-1.809c-0.632,0.375-1.332,0.647-2.076,0.793c-0.596-0.636-1.446-1.033-2.387-1.033c-1.806,0-3.27,1.464-3.27,3.27 c0,0.256,0.029,0.506,0.085,0.745C5.163,5.404,2.753,4.102,1.14,2.124C0.859,2.607,0.698,3.168,0.698,3.767 c0,1.134,0.577,2.135,1.455,2.722C1.616,6.472,1.112,6.325,0.671,6.08c0,0.014,0,0.027,0,0.041c0,1.584,1.127,2.906,2.623,3.206 C3.02,9.402,2.731,9.442,2.433,9.442c-0.211,0-0.416-0.021-0.615-0.059c0.416,1.299,1.624,2.245,3.055,2.271 c-1.119,0.877-2.529,1.4-4.061,1.4c-0.264,0-0.524-0.015-0.78-0.046c1.447,0.928,3.166,1.469,5.013,1.469 c6.015,0,9.304-4.983,9.304-9.304c0-0.142-0.003-0.283-0.009-0.423C14.976,4.29,15.531,3.714,15.969,3.058z"></path>
+</svg>
+</span>
+</a>
+
+<a href="/page/links.html">
+<span class="icon icon--links">
+<svg t="1597890241324" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2110" width="24" height="24"><path d="M262.4 1017.6c-64 0-128-25.6-179.2-76.8-102.4-102.4-102.4-262.4 0-364.8l134.4-134.4 89.6 89.6-134.4 134.4c-51.2 51.2-51.2 128 0 179.2 51.2 51.2 128 51.2 179.2 0l179.2-179.2c25.6-25.6 38.4-57.6 38.4-89.6S556.8 512 537.6 486.4L467.2 422.4l89.6-89.6 70.4 70.4C672 448 697.6 512 697.6 582.4c0 70.4-25.6 134.4-76.8 179.2l-179.2 179.2C396.8 992 326.4 1017.6 262.4 1017.6zM467.2 691.2 396.8 627.2c-102.4-102.4-102.4-262.4 0-364.8l179.2-179.2c102.4-102.4 262.4-102.4 364.8 0 102.4 102.4 102.4 262.4 0 364.8l-134.4 134.4-89.6-89.6 134.4-134.4c51.2-51.2 51.2-128 0-179.2-51.2-51.2-134.4-51.2-179.2 0L486.4 352c-51.2 51.2-51.2 128 0 179.2l70.4 70.4L467.2 691.2z" p-id="2111"></path></svg>
+</svg>
+</span>
+</a>
+
+</div>
+</div>
+</div>
+</footer>
+</body>
+</html>

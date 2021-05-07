@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+<title>源码分析-Java/lang/Integer</title>
+<style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+</style>
+<style>
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+  position: relative; left: -1em; text-align: right; vertical-align: baseline;
+  border: none; display: inline-block;
+  -webkit-touch-callout: none; -webkit-user-select: none;
+  -khtml-user-select: none; -moz-user-select: none;
+  -ms-user-select: none; user-select: none;
+  padding: 0 4px; width: 4em;
+  background-color: #232629;
+  color: #7a7c7d;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #7a7c7d;  padding-left: 4px; }
+div.sourceCode
+{ color: #cfcfc2; background-color: #232629; }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span { color: #cfcfc2; } /* Normal */
+code span.al { color: #95da4c; background-color: #4d1f24; font-weight: bold; } /* Alert */
+code span.an { color: #3f8058; } /* Annotation */
+code span.at { color: #2980b9; } /* Attribute */
+code span.bn { color: #f67400; } /* BaseN */
+code span.bu { color: #7f8c8d; } /* BuiltIn */
+code span.cf { color: #fdbc4b; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #3daee9; } /* Char */
+code span.cn { color: #27aeae; font-weight: bold; } /* Constant */
+code span.co { color: #7a7c7d; } /* Comment */
+code span.cv { color: #7f8c8d; } /* CommentVar */
+code span.do { color: #a43340; } /* Documentation */
+code span.dt { color: #2980b9; } /* DataType */
+code span.dv { color: #f67400; } /* DecVal */
+code span.er { color: #da4453; text-decoration: underline; } /* Error */
+code span.ex { color: #0099ff; font-weight: bold; } /* Extension */
+code span.fl { color: #f67400; } /* Float */
+code span.fu { color: #8e44ad; } /* Function */
+code span.im { color: #27ae60; } /* Import */
+code span.in { color: #c45b00; } /* Information */
+code span.kw { color: #cfcfc2; font-weight: bold; } /* Keyword */
+code span.op { color: #cfcfc2; } /* Operator */
+code span.ot { color: #27ae60; } /* Other */
+code span.pp { color: #27ae60; } /* Preprocessor */
+code span.re { color: #2980b9; background-color: #153042; } /* RegionMarker */
+code span.sc { color: #3daee9; } /* SpecialChar */
+code span.ss { color: #da4453; } /* SpecialString */
+code span.st { color: #f44f4f; } /* String */
+code span.va { color: #27aeae; } /* Variable */
+code span.vs { color: #da4453; } /* VerbatimString */
+code span.wa { color: #da4453; } /* Warning */
+</style>
+<!--[if lt IE 9]>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+<![endif]-->
+<link rel="stylesheet" href="/assets/main.css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-F2PYD8JK1Z"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-F2PYD8JK1Z');
+</script>
+</head>
+<body>
+<header class="site-header" role="banner">
+<div class="wrapper">
+  <a class="site-title" href="/">孤星可</a>
+
+  <nav><ul class="nav-list clearfix">
+    <li class="nav-item"><a href="/" alt="首页" title="首页">首页</a></li>
+    <li class="nav-item"><a href="/wiki/index.html" alt="Wiki" title="Wiki">Wiki</a></li>
+    <li class="nav-item"><a href="/page/about.html" alt="关于" title="关于">关于</a></li>
+  </ul></nav>
+
+  <span class="site-desc">人生天地间 忽如远行客</span>
+</div>
+</header>
+
+<main class="page-content" aria-label="Content">
+<div class="wrapper">
+<div class="post">
+<h3 class="post-title">源码分析-Java/lang/Integer</h3>
+<div class="post-date"><span>最后修改时间<span> 2021-05-07</div>
+<div class="post-meta">
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#概览">概览</a></li>
+<li><a href="#继承结构">继承结构</a></li>
+<li><a href="#常见用法">常见用法</a></li>
+<li><a href="#主要属性">主要属性</a>
+<ul>
+<li><a href="#成员变量">成员变量</a></li>
+</ul></li>
+<li><a href="#内部类">内部类</a>
+<ul>
+<li><a href="#integercache">IntegerCache</a></li>
+</ul></li>
+<li><a href="#主要方法">主要方法</a>
+<ul>
+<li><a href="#构造函数">构造函数</a></li>
+<li><a href="#实例方法">实例方法</a></li>
+<li><a href="#静态方法">静态方法</a></li>
+</ul></li>
+<li><a href="#常见问题">常见问题</a></li>
+<li><a href="#潜在考点">潜在考点</a></li>
+<li><a href="#补充">补充</a></li>
+<li><a href="#后记">后记</a></li>
+<li><a href="#参考">参考</a></li>
+</ul>
+</nav>
+</div>
+<div class="post-content">
+<h2 id="概览">概览</h2>
+<p>Integer 是原始类型 int 的包装类, 提供了一些处理 int 类型的方法,和一些 Integer, String 互相转换的方法, 以及一些位运算.</p>
+<h2 id="继承结构">继承结构</h2>
+<figure>
+<img src="java.lang.Integer.png" alt="java.lang.Integer" /><figcaption aria-hidden="true">java.lang.Integer</figcaption>
+</figure>
+<h2 id="常见用法">常见用法</h2>
+<p><a href="../tests/lang/IntegerTest.java">测试类</a></p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> x = <span class="dv">1</span>;</span></code></pre></div>
+<h2 id="主要属性">主要属性</h2>
+<h3 id="成员变量">成员变量</h3>
+<div class="sourceCode" id="cb2"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">private</span> <span class="dt">final</span> <span class="dt">int</span> value; <span class="co">// 真实的 int 值</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>``` ### 静态变量</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>```java</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span> <span class="dt">static</span> <span class="dt">final</span> <span class="dt">int</span> MIN_VALUE = <span class="bn">0x80000000</span>; <span class="co">// =&gt; 0b10000000000000000000000000000000 =&gt; -2147483648</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span> <span class="dt">static</span> <span class="dt">final</span> <span class="dt">int</span> MAX_VALUE = <span class="bn">0x7fffffff</span>; <span class="co">// =&gt; 0b01111111111111111111111111111111 =&gt;  2147483647</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span> <span class="dt">static</span> <span class="dt">final</span> <span class="dt">int</span> SIZE = <span class="dv">32</span>; <span class="co">// 即 32 bit位</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span> <span class="dt">static</span> <span class="dt">final</span> <span class="dt">int</span> BYTES = SIZE / <span class="bu">Byte</span>.<span class="fu">SIZE</span>; <span class="co">// =&gt; 4 byte</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span> <span class="dt">static</span> <span class="dt">final</span> <span class="bu">Class</span>&lt;<span class="bu">Integer</span>&gt;  TYPE = (<span class="bu">Class</span>&lt;<span class="bu">Integer</span>&gt;) <span class="bu">Class</span>.<span class="fu">getPrimitiveClass</span>(<span class="st">&quot;int&quot;</span>);</span></code></pre></div>
+<h2 id="内部类">内部类</h2>
+<h3 id="integercache">IntegerCache</h3>
+<div class="sourceCode" id="cb3"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">private</span> <span class="dt">static</span> <span class="kw">class</span> IntegerCache {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>        <span class="dt">static</span> <span class="dt">final</span> <span class="dt">int</span> low = -<span class="dv">128</span>;</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>        <span class="dt">static</span> <span class="dt">final</span> <span class="dt">int</span> high;</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>        <span class="dt">static</span> <span class="dt">final</span> <span class="bu">Integer</span> cache[];</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>        <span class="dt">static</span> {</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>            <span class="co">// high value may be configured by property</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>            <span class="dt">int</span> h = <span class="dv">127</span>;</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>            <span class="bu">String</span> integerCacheHighPropValue =</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>                sun.<span class="fu">misc</span>.<span class="fu">VM</span>.<span class="fu">getSavedProperty</span>(<span class="st">&quot;java.lang.Integer.IntegerCache.high&quot;</span>);</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>            <span class="kw">if</span> (integerCacheHighPropValue != <span class="kw">null</span>) {</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>                <span class="kw">try</span> {</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>                    <span class="dt">int</span> i = <span class="fu">parseInt</span>(integerCacheHighPropValue);</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>                    i = <span class="bu">Math</span>.<span class="fu">max</span>(i, <span class="dv">127</span>);</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>                    <span class="co">// Maximum array size is Integer.MAX_VALUE</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>                    h = <span class="bu">Math</span>.<span class="fu">min</span>(i, <span class="bu">Integer</span>.<span class="fu">MAX_VALUE</span> - (-low) -<span class="dv">1</span>);</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>                } <span class="kw">catch</span>( <span class="bu">NumberFormatException</span> nfe) {</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>                    <span class="co">// If the property cannot be parsed into an int, ignore it.</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>                }</span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>            }</span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>            high = h;</span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>            cache = <span class="kw">new</span> <span class="bu">Integer</span>[(high - low) + <span class="dv">1</span>];</span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>            <span class="dt">int</span> j = low;</span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>            <span class="kw">for</span>(<span class="dt">int</span> k = <span class="dv">0</span>; k &lt; cache.<span class="fu">length</span>; k++)</span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>                cache[k] = <span class="kw">new</span> <span class="bu">Integer</span>(j++);</span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>            <span class="co">// range [-128, 127] must be interned (JLS7 5.1.7)</span></span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>            assert IntegerCache.<span class="fu">high</span> &gt;= <span class="dv">127</span>;</span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a>        <span class="kw">private</span> <span class="fu">IntegerCache</span>() {}</span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>    }</span></code></pre></div>
+<p>Integer 对象的缓冲池. 默认缓冲 -128 - 127 共 256 个 Integer 对象. 主要用于自动拆装箱和面试(-:).<br />
+源码如下, 可以看出 high 是可以自定义的. high 的最大值为 Integer.MAX_VALUE - 129 , 最小值为 127.</p>
+<h2 id="主要方法">主要方法</h2>
+<h3 id="构造函数">构造函数</h3>
+<ul>
+<li>Integer(int)</li>
+<li>Integer(String)</li>
+</ul>
+<h3 id="实例方法">实例方法</h3>
+<h4 id="hashcodeint">hashCode():int</h4>
+<div class="sourceCode" id="cb4"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span> <span class="dt">int</span> <span class="fu">hashCode</span>() {</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">return</span> <span class="bu">Integer</span>.<span class="fu">hashCode</span>(value);</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>结果是成员变量 value.</p>
+<h4 id="equalsobjectboolean">equals(Object):boolean</h4>
+<div class="sourceCode" id="cb5"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span> <span class="dt">boolean</span> <span class="fu">equals</span>(<span class="bu">Object</span> obj) {</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">if</span> (obj <span class="kw">instanceof</span> <span class="bu">Integer</span>) {</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>        <span class="kw">return</span> value == ((<span class="bu">Integer</span>)obj).<span class="fu">intValue</span>();</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">return</span> <span class="kw">false</span>;</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>比较的是成员变量 value.</p>
+<h3 id="静态方法">静态方法</h3>
+<h4 id="hashcodeintint">hashCode(int):int</h4>
+<div class="sourceCode" id="cb6"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span> <span class="dt">static</span> <span class="dt">int</span> <span class="fu">hashCode</span>(<span class="dt">int</span> value) {</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">return</span> value;</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h4 id="tostring-方法">toString 方法</h4>
+<pre class="text"><code>java.lang.Integer#toString(int, int)
+java.lang.Integer#toUnsignedString(int, int)
+java.lang.Integer#toHexString
+java.lang.Integer#toOctalString
+java.lang.Integer#toBinaryString
+java.lang.Integer#toString(int)
+java.lang.Integer#toUnsignedString(int)</code></pre>
+<p>10进制数字到其他进制的转换方法.</p>
+<h4 id="parseint-方法">parseInt 方法</h4>
+<pre class="text"><code>java.lang.Integer#parseInt(java.lang.String, int)
+java.lang.Integer#parseInt(java.lang.String)
+java.lang.Integer#parseUnsignedInt(java.lang.String, int)
+java.lang.Integer#parseUnsignedInt(java.lang.String)</code></pre>
+<p>字符串到int的转换<br />
+e.g<br />
+0xa -&gt; 10 16进制<br />
+0b1010 -&gt; 10 2进制<br />
+012 -&gt; 10 8进制</p>
+<h4 id="valueof-方法">valueOf 方法</h4>
+<div class="sourceCode" id="cb9"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span> <span class="dt">static</span> <span class="bu">Integer</span> <span class="fu">valueOf</span>(<span class="dt">int</span> i) {</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">if</span> (i &gt;= IntegerCache.<span class="fu">low</span> &amp;&amp; i &lt;= IntegerCache.<span class="fu">high</span>)</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>        <span class="kw">return</span> IntegerCache.<span class="fu">cache</span>[i + (-IntegerCache.<span class="fu">low</span>)];</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">return</span> <span class="kw">new</span> <span class="bu">Integer</span>(i);</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>重点看一下装箱用的 Integer#valueOf(int) 方法, 使用了对象池.</p>
+<h4 id="xxxvalue-方法">xxxValue 方法</h4>
+<div class="sourceCode" id="cb10"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co">/**</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> Returns the value of this <span class="an">{@code Integer}</span> as a <span class="an">{@code byte}</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> after a narrowing primitive conversion<span class="co">.</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="co">@</span>jls <span class="co">5.1.3</span> Narrowing Primitive Conversions</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a> <span class="co">*/</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span> <span class="dt">byte</span> <span class="fu">byteValue</span>() {</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">return</span> (<span class="dt">byte</span>)value;</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a><span class="co">/**</span></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> Returns the value of this <span class="an">{@code Integer}</span> as a <span class="an">{@code short}</span></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> after a narrowing primitive conversion<span class="co">.</span></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="co">@</span>jls <span class="co">5.1.3</span> Narrowing Primitive Conversions</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a> <span class="co">*/</span></span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span> <span class="dt">short</span> <span class="fu">shortValue</span>() {</span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>    <span class="kw">return</span> (<span class="dt">short</span>)value;</span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a><span class="co">/**</span></span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> Returns the value of this <span class="an">{@code Integer}</span> as an</span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">{@code int}</span><span class="co">.</span></span>
+<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a> <span class="co">*/</span></span>
+<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span> <span class="dt">int</span> <span class="fu">intValue</span>() {</span>
+<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a>    <span class="kw">return</span> value;</span>
+<span id="cb10-25"><a href="#cb10-25" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb10-26"><a href="#cb10-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-27"><a href="#cb10-27" aria-hidden="true" tabindex="-1"></a><span class="co">/**</span></span>
+<span id="cb10-28"><a href="#cb10-28" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> Returns the value of this <span class="an">{@code Integer}</span> as a <span class="an">{@code long}</span></span>
+<span id="cb10-29"><a href="#cb10-29" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> after a widening primitive conversion<span class="co">.</span></span>
+<span id="cb10-30"><a href="#cb10-30" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="co">@</span>jls <span class="co">5.1.2</span> Widening Primitive Conversions</span>
+<span id="cb10-31"><a href="#cb10-31" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">@see </span>Integer<span class="an">#</span>toUnsignedLong<span class="an">(</span>int<span class="an">)</span></span>
+<span id="cb10-32"><a href="#cb10-32" aria-hidden="true" tabindex="-1"></a> <span class="co">*/</span></span>
+<span id="cb10-33"><a href="#cb10-33" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span> <span class="dt">long</span> <span class="fu">longValue</span>() {</span>
+<span id="cb10-34"><a href="#cb10-34" aria-hidden="true" tabindex="-1"></a>    <span class="kw">return</span> (<span class="dt">long</span>)value;</span>
+<span id="cb10-35"><a href="#cb10-35" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb10-36"><a href="#cb10-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-37"><a href="#cb10-37" aria-hidden="true" tabindex="-1"></a><span class="co">/**</span></span>
+<span id="cb10-38"><a href="#cb10-38" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> Returns the value of this <span class="an">{@code Integer}</span> as a <span class="an">{@code float}</span></span>
+<span id="cb10-39"><a href="#cb10-39" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> after a widening primitive conversion<span class="co">.</span></span>
+<span id="cb10-40"><a href="#cb10-40" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="co">@</span>jls <span class="co">5.1.2</span> Widening Primitive Conversions</span>
+<span id="cb10-41"><a href="#cb10-41" aria-hidden="true" tabindex="-1"></a> <span class="co">*/</span></span>
+<span id="cb10-42"><a href="#cb10-42" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span> <span class="dt">float</span> <span class="fu">floatValue</span>() {</span>
+<span id="cb10-43"><a href="#cb10-43" aria-hidden="true" tabindex="-1"></a>    <span class="kw">return</span> (<span class="dt">float</span>)value;</span>
+<span id="cb10-44"><a href="#cb10-44" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb10-45"><a href="#cb10-45" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-46"><a href="#cb10-46" aria-hidden="true" tabindex="-1"></a><span class="co">/**</span></span>
+<span id="cb10-47"><a href="#cb10-47" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> Returns the value of this <span class="an">{@code Integer}</span> as a <span class="an">{@code double}</span></span>
+<span id="cb10-48"><a href="#cb10-48" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> after a widening primitive conversion<span class="co">.</span></span>
+<span id="cb10-49"><a href="#cb10-49" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="co">@</span>jls <span class="co">5.1.2</span> Widening Primitive Conversions</span>
+<span id="cb10-50"><a href="#cb10-50" aria-hidden="true" tabindex="-1"></a> <span class="co">*/</span></span>
+<span id="cb10-51"><a href="#cb10-51" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span> <span class="dt">double</span> <span class="fu">doubleValue</span>() {</span>
+<span id="cb10-52"><a href="#cb10-52" aria-hidden="true" tabindex="-1"></a>    <span class="kw">return</span> (<span class="dt">double</span>)value;</span>
+<span id="cb10-53"><a href="#cb10-53" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>继承自 Number 的方法.</p>
+<h4 id="位运算-方法">位运算 方法</h4>
+<ul>
+<li>java.lang.Integer#highestOneBit(int)</li>
+</ul>
+<div class="sourceCode" id="cb11"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co">/**</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> Returns an <span class="an">{@code int}</span> value with at most a single one<span class="co">-</span>bit<span class="co">,</span> in the</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> position of the highest<span class="co">-</span>order <span class="co">(&quot;</span>leftmost<span class="co">&quot;)</span> one<span class="co">-</span>bit in the specified</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">{@code int}</span> value<span class="co">. </span> Returns zero if the specified value has no</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> one<span class="co">-</span>bits in its two<span class="co">&#39;</span>s complement binary representation<span class="co">,</span> that is<span class="co">,</span> if it</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> is equal to zero<span class="co">.</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">@param i </span>the value whose highest one bit is to be computed</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">@return </span>an <span class="an">{@code int}</span> value with a single one<span class="co">-</span>bit<span class="co">,</span> in the position</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span>     of the highest<span class="co">-</span>order one<span class="co">-</span>bit in the specified value<span class="co">,</span> or zero if</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span>     the specified value is itself equal to zero<span class="co">.</span></span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">@since </span><span class="co">1.5</span></span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a> <span class="co">*/</span></span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span> <span class="dt">static</span> <span class="dt">int</span> <span class="fu">highestOneBit</span>(<span class="dt">int</span> i) {</span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>    <span class="co">// HD, Figure 3-1</span></span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>    i |= (i &gt;&gt;  <span class="dv">1</span>);</span>
+<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a>    i |= (i &gt;&gt;  <span class="dv">2</span>);</span>
+<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a>    i |= (i &gt;&gt;  <span class="dv">4</span>);</span>
+<span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a>    i |= (i &gt;&gt;  <span class="dv">8</span>);</span>
+<span id="cb11-20"><a href="#cb11-20" aria-hidden="true" tabindex="-1"></a>    i |= (i &gt;&gt; <span class="dv">16</span>);</span>
+<span id="cb11-21"><a href="#cb11-21" aria-hidden="true" tabindex="-1"></a>    <span class="kw">return</span> i - (i &gt;&gt;&gt; <span class="dv">1</span>);</span>
+<span id="cb11-22"><a href="#cb11-22" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb11-23"><a href="#cb11-23" aria-hidden="true" tabindex="-1"></a><span class="co">// 00000000 10110000 00000000 00000000</span></span>
+<span id="cb11-24"><a href="#cb11-24" aria-hidden="true" tabindex="-1"></a><span class="co">// 00000000 01111000 00000000 00000000 1</span></span>
+<span id="cb11-25"><a href="#cb11-25" aria-hidden="true" tabindex="-1"></a><span class="co">// 00000000 01111110 00000000 00000000 2</span></span>
+<span id="cb11-26"><a href="#cb11-26" aria-hidden="true" tabindex="-1"></a><span class="co">// 00000000 01111111 11100000 00000000 4</span></span>
+<span id="cb11-27"><a href="#cb11-27" aria-hidden="true" tabindex="-1"></a><span class="co">// 00000000 01111111 11111111 11100000 8</span></span>
+<span id="cb11-28"><a href="#cb11-28" aria-hidden="true" tabindex="-1"></a><span class="co">// 00000000 01111111 11111111 11111111 16</span></span>
+<span id="cb11-29"><a href="#cb11-29" aria-hidden="true" tabindex="-1"></a><span class="co">// 00000000 01000000 00000000 00000000 i - (i &gt;&gt;&gt; 1)</span></span></code></pre></div>
+<p>返回i的二进制中最高位的1, 其他全为0的值. 如 0b1111 -&gt; 15 =&gt; 0b1000 -&gt; 8<br />
+对于负数, 返回 0x8000000<br />
+对于0, 返回0<br />
+对于正数<br />
+1. i | (i&gt;&gt;1) , 定位到最高位1的位置n. 保证 n,n+1 位置为1. 2. i | (i&gt;&gt;2) , 保证 n,n+1,n+2,n+3 位置为1. 3. i | (i&gt;&gt;4) , 保证 n,n+1,n+2,n+3..n+7 位置为1. 4. i | (i&gt;&gt;8) , 保证 n,n+1,n+2,n+3..n+15 位置为1. 5. i | (i&gt;&gt;16) , 保证 n,n+1,n+2,n+3..n+31 位置为1. 6. i - (i&gt;&gt;&gt;1) 得到 n 位为1, n之后的所有位置为0 的值. 即结果.</p>
+<ul>
+<li>java.lang.Integer#lowestOneBit(int)</li>
+</ul>
+<div class="sourceCode" id="cb12"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co">/**</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> Returns an <span class="an">{@code int}</span> value with at most a single one<span class="co">-</span>bit<span class="co">,</span> in the</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> position of the lowest<span class="co">-</span>order <span class="co">(&quot;</span>rightmost<span class="co">&quot;)</span> one<span class="co">-</span>bit in the specified</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">{@code int}</span> value<span class="co">. </span> Returns zero if the specified value has no</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> one<span class="co">-</span>bits in its two<span class="co">&#39;</span>s complement binary representation<span class="co">,</span> that is<span class="co">,</span> if it</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> is equal to zero<span class="co">.</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">@param i </span>the value whose lowest one bit is to be computed</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">@return </span>an <span class="an">{@code int}</span> value with a single one<span class="co">-</span>bit<span class="co">,</span> in the position</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span>     of the lowest<span class="co">-</span>order one<span class="co">-</span>bit in the specified value<span class="co">,</span> or zero if</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span>     the specified value is itself equal to zero<span class="co">.</span></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">@since </span><span class="co">1.5</span></span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a> <span class="co">*/</span></span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span> <span class="dt">static</span> <span class="dt">int</span> <span class="fu">lowestOneBit</span>(<span class="dt">int</span> i) {</span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>    <span class="co">// HD, Section 2-1</span></span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>    <span class="kw">return</span> i &amp; -i;</span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a><span class="bn">0000</span> <span class="dv">1100</span></span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a><span class="dv">1111</span> <span class="bn">0100</span></span>
+<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a><span class="bn">0000</span> <span class="bn">0100</span></span></code></pre></div>
+<p>返回i的二进制中最低位1，其他全为0的值<br />
+负数的补码是正数反码+1, 与正数补码皆为1的位置一定是最后一个1.</p>
+<ul>
+<li>java.lang.Integer#numberOfLeadingZeros(int)</li>
+</ul>
+<div class="sourceCode" id="cb13"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co">/**</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>     <span class="co">*</span> Returns the number of zero bits preceding the highest<span class="co">-</span>order</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>     <span class="co">*</span> <span class="co">(&quot;</span>leftmost<span class="co">&quot;)</span> one<span class="co">-</span>bit in the two<span class="co">&#39;</span>s complement binary representation</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>     <span class="co">*</span> of the specified <span class="an">{@code int}</span> value<span class="co">. </span> Returns <span class="co">32</span> if the</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>     <span class="co">*</span> specified value has no one<span class="co">-</span>bits in its two<span class="co">&#39;</span>s complement representation<span class="co">,</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>     <span class="co">*</span> in other words if it is equal to zero<span class="co">.</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>     <span class="co">*</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>     <span class="co">*</span> <span class="kw">&lt;p&gt;</span>Note that this method is closely related to the logarithm base <span class="co">2.</span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>     <span class="co">*</span> For all positive <span class="an">{@code int}</span> values x<span class="co">:</span></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>     <span class="co">*</span> <span class="kw">&lt;ul&gt;</span></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>     <span class="co">*</span> <span class="kw">&lt;li&gt;</span>floor<span class="co">(</span>log<span class="kw">&lt;sub&gt;</span><span class="co">2</span><span class="kw">&lt;/sub&gt;</span><span class="co">(</span>x<span class="co">))</span> <span class="co">=</span> <span class="an">{@code 31 - numberOfLeadingZeros(x)}</span></span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>     <span class="co">*</span> <span class="kw">&lt;li&gt;</span>ceil<span class="co">(</span>log<span class="kw">&lt;sub&gt;</span><span class="co">2</span><span class="kw">&lt;/sub&gt;</span><span class="co">(</span>x<span class="co">))</span> <span class="co">=</span> <span class="an">{@code 32 - numberOfLeadingZeros(x - 1)}</span></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>     <span class="co">*</span> <span class="kw">&lt;/ul&gt;</span></span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>     <span class="co">*</span></span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>     <span class="co">*</span> <span class="an">@param i </span>the value whose number of leading zeros is to be computed</span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>     <span class="co">*</span> <span class="an">@return </span>the number of zero bits preceding the highest<span class="co">-</span>order</span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>     <span class="co">*</span>     <span class="co">(&quot;</span>leftmost<span class="co">&quot;)</span> one<span class="co">-</span>bit in the two<span class="co">&#39;</span>s complement binary representation</span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>     <span class="co">*</span>     of the specified <span class="an">{@code int}</span> value<span class="co">,</span> or <span class="co">32</span> if the value</span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>     <span class="co">*</span>     is equal to zero<span class="co">.</span></span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a>     <span class="co">*</span> <span class="an">@since </span><span class="co">1.5</span></span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a>     <span class="co">*/</span></span>
+<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span> <span class="dt">static</span> <span class="dt">int</span> <span class="fu">numberOfLeadingZeros</span>(<span class="dt">int</span> i) {</span>
+<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a>    <span class="co">// HD, Figure 5-6</span></span>
+<span id="cb13-24"><a href="#cb13-24" aria-hidden="true" tabindex="-1"></a>    <span class="kw">if</span> (i == <span class="dv">0</span>)</span>
+<span id="cb13-25"><a href="#cb13-25" aria-hidden="true" tabindex="-1"></a>        <span class="kw">return</span> <span class="dv">32</span>;</span>
+<span id="cb13-26"><a href="#cb13-26" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> n = <span class="dv">1</span>;</span>
+<span id="cb13-27"><a href="#cb13-27" aria-hidden="true" tabindex="-1"></a>    <span class="kw">if</span> (i &gt;&gt;&gt; <span class="dv">16</span> == <span class="dv">0</span>) { n += <span class="dv">16</span>; i &lt;&lt;= <span class="dv">16</span>; }</span>
+<span id="cb13-28"><a href="#cb13-28" aria-hidden="true" tabindex="-1"></a>    <span class="kw">if</span> (i &gt;&gt;&gt; <span class="dv">24</span> == <span class="dv">0</span>) { n +=  <span class="dv">8</span>; i &lt;&lt;=  <span class="dv">8</span>; }</span>
+<span id="cb13-29"><a href="#cb13-29" aria-hidden="true" tabindex="-1"></a>    <span class="kw">if</span> (i &gt;&gt;&gt; <span class="dv">28</span> == <span class="dv">0</span>) { n +=  <span class="dv">4</span>; i &lt;&lt;=  <span class="dv">4</span>; }</span>
+<span id="cb13-30"><a href="#cb13-30" aria-hidden="true" tabindex="-1"></a>    <span class="kw">if</span> (i &gt;&gt;&gt; <span class="dv">30</span> == <span class="dv">0</span>) { n +=  <span class="dv">2</span>; i &lt;&lt;=  <span class="dv">2</span>; }</span>
+<span id="cb13-31"><a href="#cb13-31" aria-hidden="true" tabindex="-1"></a>    n -= i &gt;&gt;&gt; <span class="dv">31</span>;</span>
+<span id="cb13-32"><a href="#cb13-32" aria-hidden="true" tabindex="-1"></a>    <span class="kw">return</span> n;</span>
+<span id="cb13-33"><a href="#cb13-33" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<ul>
+<li>java.lang.Integer#bitCount(int)</li>
+</ul>
+<div class="sourceCode" id="cb14"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co">/**</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> Returns the number of one<span class="co">-</span>bits in the two<span class="co">&#39;</span>s complement binary</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> representation of the specified <span class="an">{@code int}</span> value<span class="co">. </span> This function is</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> sometimes referred to as the <span class="kw">&lt;i&gt;</span>population count<span class="kw">&lt;/i&gt;</span><span class="co">.</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">@param i </span>the value whose bits are to be counted</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">@return </span>the number of one<span class="co">-</span>bits in the two<span class="co">&#39;</span>s complement binary</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span>     representation of the specified <span class="an">{@code int}</span> value<span class="co">.</span></span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">@since </span><span class="co">1.5</span></span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a> <span class="co">*/</span></span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span> <span class="dt">static</span> <span class="dt">int</span> <span class="fu">bitCount</span>(<span class="dt">int</span> i) {</span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>    <span class="co">// HD, Figure 5-2</span></span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>    i = i - ((i &gt;&gt;&gt; <span class="dv">1</span>) &amp; <span class="bn">0x55555555</span>);</span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>    i = (i &amp; <span class="bn">0x33333333</span>) + ((i &gt;&gt;&gt; <span class="dv">2</span>) &amp; <span class="bn">0x33333333</span>);</span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>    i = (i + (i &gt;&gt;&gt; <span class="dv">4</span>)) &amp; <span class="bn">0x0f0f0f0f</span>;</span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>    i = i + (i &gt;&gt;&gt; <span class="dv">8</span>);</span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a>    i = i + (i &gt;&gt;&gt; <span class="dv">16</span>);</span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a>    <span class="kw">return</span> i &amp; <span class="bn">0x3f</span>;</span>
+<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>二进制中1的个数, 可用来计算<a href="https://leetcode-cn.com/problems/hamming-distance/">汉明距离</a><br />
+思路<br />
+10101010 10101010 10101010 10101010<br />
+1. 01010101 01010101 01010101 01010101 &lt;= 每2位有几个1 2. 00100010 00100010 00100010 00100010 &lt;= 每4位有几个1 3. 00000100 00000100 00000100 00000100 &lt;= 每8位有几个1 4. 00000000 00001000 00000000 00001000 &lt;= 每16位有几个1 5. 00000000 00000000 00000000 00010000 &lt;= 每32位有几个1 5. 00000000 00000000 00000000 00010000 &lt;= 与 0b111111(0x3f) 与运算得最终结果. =&gt; 16</p>
+<ul>
+<li>java.lang.Integer#reverse(int)</li>
+</ul>
+<div class="sourceCode" id="cb15"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co">/**</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> Returns the value obtained by reversing the order of the bits in the</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> two<span class="co">&#39;</span>s complement binary representation of the specified <span class="an">{@code int}</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> value<span class="co">.</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">@param i </span>the value to be reversed</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">@return </span>the value obtained by reversing order of the bits in the</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span>     specified <span class="an">{@code int}</span> value<span class="co">.</span></span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">@since </span><span class="co">1.5</span></span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a> <span class="co">*/</span></span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span> <span class="dt">static</span> <span class="dt">int</span> <span class="fu">reverse</span>(<span class="dt">int</span> i) {</span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>    <span class="co">// HD, Figure 7-1</span></span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>    i = (i &amp; <span class="bn">0x55555555</span>) &lt;&lt; <span class="dv">1</span> | (i &gt;&gt;&gt; <span class="dv">1</span>) &amp; <span class="bn">0x55555555</span>;</span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>    i = (i &amp; <span class="bn">0x33333333</span>) &lt;&lt; <span class="dv">2</span> | (i &gt;&gt;&gt; <span class="dv">2</span>) &amp; <span class="bn">0x33333333</span>;</span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>    i = (i &amp; <span class="bn">0x0f0f0f0f</span>) &lt;&lt; <span class="dv">4</span> | (i &gt;&gt;&gt; <span class="dv">4</span>) &amp; <span class="bn">0x0f0f0f0f</span>;</span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a>    i = (i &lt;&lt; <span class="dv">24</span>) | ((i &amp; <span class="bn">0xff00</span>) &lt;&lt; <span class="dv">8</span>) |</span>
+<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a>        ((i &gt;&gt;&gt; <span class="dv">8</span>) &amp; <span class="bn">0xff00</span>) | (i &gt;&gt;&gt; <span class="dv">24</span>);</span>
+<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a>    <span class="kw">return</span> i;</span>
+<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>二进制反转, 1-32,2-31,3-30…, e.g 0b10101010101010101010101010101010 -&gt; 0b01010101010101010101010101010101<br />
+算法思路<br />
+以 32 位反转为例<br />
+10110001 00111010 11000101 00110011<br />
+1. 10110001 00111010 11000101 00110011 &lt;= 原数据<br />
+2. 01110010 00110101 11001010 00110011 &lt;= 每2位互换<br />
+3. 11011000 11000101 00111010 11001100 &lt;= 每4位中2位互换<br />
+4. 10001101 01011100 10100011 11001100 &lt;= 每8位中4位互换<br />
+5. 01011100 10001101 11001100 10100011 &lt;= 每16位中8位互换<br />
+6. 11001100 10100011 01011100 10001101 &lt;= 每32位中16位互换</p>
+<p>5.6 两步实际上就是反转字节. b1b2b3b4 -&gt; b2b1b4b3 -&gt; b4b3b2b1</p>
+<ul>
+<li>java.lang.reverseBytes(int)</li>
+</ul>
+<div class="sourceCode" id="cb16"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co">/**</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> Returns the value obtained by reversing the order of the bytes in the</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> two<span class="co">&#39;</span>s complement representation of the specified <span class="an">{@code int}</span> value<span class="co">.</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">@param i </span>the value whose bytes are to be reversed</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">@return </span>the value obtained by reversing the bytes in the specified</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span>     <span class="an">{@code int}</span> value<span class="co">.</span></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">@since </span><span class="co">1.5</span></span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a> <span class="co">*/</span></span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span> <span class="dt">static</span> <span class="dt">int</span> <span class="fu">reverseBytes</span>(<span class="dt">int</span> i) {</span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>    <span class="kw">return</span> ((i &gt;&gt;&gt; <span class="dv">24</span>)           ) |</span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>           ((i &gt;&gt;   <span class="dv">8</span>) &amp;   <span class="bn">0xFF00</span>) |</span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>           ((i &lt;&lt;   <span class="dv">8</span>) &amp; <span class="bn">0xFF0000</span>) |</span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a>           ((i &lt;&lt; <span class="dv">24</span>));</span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a><span class="co">// 00000000 00000000 11111111 00000000  &lt;=&gt; 0xFF00</span></span>
+<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a><span class="co">// 00000000 11111111 00000000 00000000 &lt;=&gt; 0xFF0000</span></span>
+<span id="cb16-19"><a href="#cb16-19" aria-hidden="true" tabindex="-1"></a><span class="co">// e.g i=0b11000000001100000000110000000011</span></span>
+<span id="cb16-20"><a href="#cb16-20" aria-hidden="true" tabindex="-1"></a><span class="co">// 11000000 00110000 00001100 00000011  &lt;=&gt; i=0b11000000001100000000110000000011</span></span>
+<span id="cb16-21"><a href="#cb16-21" aria-hidden="true" tabindex="-1"></a><span class="co">// 11111111 11000000 00110000 00001100  &lt;=&gt; i &gt;&gt; 8</span></span>
+<span id="cb16-22"><a href="#cb16-22" aria-hidden="true" tabindex="-1"></a><span class="co">// 00110000 00001100 00000011 00000000  &lt;=&gt; i &lt;&lt; 8</span></span>
+<span id="cb16-23"><a href="#cb16-23" aria-hidden="true" tabindex="-1"></a><span class="co">// 00000000 00000000 00000000 11000000  &lt;=&gt; i &gt;&gt;&gt; 24</span></span>
+<span id="cb16-24"><a href="#cb16-24" aria-hidden="true" tabindex="-1"></a><span class="co">// 00000000 00000000 00110000 00000000  &lt;=&gt; (i &gt;&gt; 8) &amp; 0xFF00</span></span>
+<span id="cb16-25"><a href="#cb16-25" aria-hidden="true" tabindex="-1"></a><span class="co">// 00000000 00001100 00000000 00000000  &lt;=&gt; (i &lt;&lt; 8) &amp; 0xFF0000</span></span>
+<span id="cb16-26"><a href="#cb16-26" aria-hidden="true" tabindex="-1"></a><span class="co">// 00000011 00000000 00000000 00000000  &lt;=&gt; i &lt;&lt; 24</span></span>
+<span id="cb16-27"><a href="#cb16-27" aria-hidden="true" tabindex="-1"></a><span class="co">// 00000011 00001100 00110000 11000000  &lt;=&gt; result</span></span></code></pre></div>
+<p>翻转字节, 一个 int 对应 4 个 byte. 假设 i 的四个 byte 排列为 b1b2b3b4, 那结果为 b4b3b2b1 对应的 int 值.<br />
+从算法可以看出操作的是二进制, 此方法反转可能会改变正负关系</p>
+<p>i &gt;&gt;&gt; 24 取 0-8 位 至 24-42 位<br />
+(i &gt;&gt; 8) &amp; 0xFF00 取 8-16 位 至 16-24 位<br />
+(i &lt;&lt; 8) &amp; 0xFF00 取 16-24 位 至 8-16 位<br />
+i &lt;&lt; 24 取 24-32 位 至 0-8 位</p>
+<ul>
+<li>java.lang.Integer#signum(int)</li>
+</ul>
+<div class="sourceCode" id="cb17"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co">/**</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> Returns the signum function of the specified <span class="an">{@code int}</span> value<span class="co">. </span> <span class="co">(</span>The</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> return value is <span class="co">-1</span> if the specified value is negative<span class="co">;</span> <span class="co">0</span> if the</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> specified value is zero<span class="co">;</span> and <span class="co">1</span> if the specified value is positive<span class="co">.)</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">@param i </span>the value whose signum is to be computed</span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">@return </span>the signum function of the specified <span class="an">{@code int}</span> value<span class="co">.</span></span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a> <span class="co">*</span> <span class="an">@since </span><span class="co">1.5</span></span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a> <span class="co">*/</span></span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span> <span class="dt">static</span> <span class="dt">int</span> <span class="fu">signum</span>(<span class="dt">int</span> i) {</span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>    <span class="co">// HD, Section 2-7</span></span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>    <span class="kw">return</span> (i &gt;&gt; <span class="dv">31</span>) | (-i &gt;&gt;&gt; <span class="dv">31</span>);</span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a><span class="co">// 0  的二进制 0000 0000 0000 0000 0000 0000 0000 0000</span></span>
+<span id="cb17-16"><a href="#cb17-16" aria-hidden="true" tabindex="-1"></a><span class="co">// 1  的二进制 0000 0000 0000 0000 0000 0000 0000 0001</span></span>
+<span id="cb17-17"><a href="#cb17-17" aria-hidden="true" tabindex="-1"></a><span class="co">// -1 的二进制 1111 1111 1111 1111 1111 1111 1111 1111</span></span>
+<span id="cb17-18"><a href="#cb17-18" aria-hidden="true" tabindex="-1"></a><span class="co">// e.g  </span></span>
+<span id="cb17-19"><a href="#cb17-19" aria-hidden="true" tabindex="-1"></a><span class="co">// 正数 15</span></span>
+<span id="cb17-20"><a href="#cb17-20" aria-hidden="true" tabindex="-1"></a><span class="co">// 0000 0000 0000 0000 0000 0000 0000 1111 =&gt; i=15</span></span>
+<span id="cb17-21"><a href="#cb17-21" aria-hidden="true" tabindex="-1"></a><span class="co">// 0000 0000 0000 0000 0000 0000 0000 0000 =&gt; i &gt;&gt; 31</span></span>
+<span id="cb17-22"><a href="#cb17-22" aria-hidden="true" tabindex="-1"></a><span class="co">// 1111 1111 1111 1111 1111 1111 1111 0001 =&gt; -i=-15</span></span>
+<span id="cb17-23"><a href="#cb17-23" aria-hidden="true" tabindex="-1"></a><span class="co">// 0000 0000 0000 0000 0000 0000 0000 0001 =&gt; (-i&gt;&gt;&gt;31)</span></span>
+<span id="cb17-24"><a href="#cb17-24" aria-hidden="true" tabindex="-1"></a><span class="co">// 0000 0000 0000 0000 0000 0000 0000 0001 =&gt; (i &gt;&gt; 31) | (-i &gt;&gt;&gt; 31) =&gt; 1</span></span>
+<span id="cb17-25"><a href="#cb17-25" aria-hidden="true" tabindex="-1"></a><span class="co">// 0 </span></span>
+<span id="cb17-26"><a href="#cb17-26" aria-hidden="true" tabindex="-1"></a><span class="co">// 0000 0000 0000 0000 0000 0000 0000 0000 =&gt; i=0</span></span>
+<span id="cb17-27"><a href="#cb17-27" aria-hidden="true" tabindex="-1"></a><span class="co">// 0000 0000 0000 0000 0000 0000 0000 0000 =&gt; i &gt;&gt; 31</span></span>
+<span id="cb17-28"><a href="#cb17-28" aria-hidden="true" tabindex="-1"></a><span class="co">// 0000 0000 0000 0000 0000 0000 0000 0000 =&gt; -i=0</span></span>
+<span id="cb17-29"><a href="#cb17-29" aria-hidden="true" tabindex="-1"></a><span class="co">// 0000 0000 0000 0000 0000 0000 0000 0000 =&gt; (-i&gt;&gt;&gt;31)</span></span>
+<span id="cb17-30"><a href="#cb17-30" aria-hidden="true" tabindex="-1"></a><span class="co">// 0000 0000 0000 0000 0000 0000 0000 0000 =&gt; (i &gt;&gt; 31) | (-i &gt;&gt;&gt; 31) =&gt; 0</span></span>
+<span id="cb17-31"><a href="#cb17-31" aria-hidden="true" tabindex="-1"></a><span class="co">// -15</span></span>
+<span id="cb17-32"><a href="#cb17-32" aria-hidden="true" tabindex="-1"></a><span class="co">// 1111 1111 1111 1111 1111 1111 1111 0001 =&gt; i=-15</span></span>
+<span id="cb17-33"><a href="#cb17-33" aria-hidden="true" tabindex="-1"></a><span class="co">// 1111 1111 1111 1111 1111 1111 1111 1111 =&gt; i &gt;&gt; 31</span></span>
+<span id="cb17-34"><a href="#cb17-34" aria-hidden="true" tabindex="-1"></a><span class="co">// 0000 0000 0000 0000 0000 0000 0000 1111 =&gt; -i=15</span></span>
+<span id="cb17-35"><a href="#cb17-35" aria-hidden="true" tabindex="-1"></a><span class="co">// 0000 0000 0000 0000 0000 0000 0000 0000 =&gt; (-i&gt;&gt;&gt;31)</span></span>
+<span id="cb17-36"><a href="#cb17-36" aria-hidden="true" tabindex="-1"></a><span class="co">// 1111 1111 1111 1111 1111 1111 1111 1111 =&gt; (i &gt;&gt; 31) | (-i &gt;&gt;&gt; 31) =&gt; -1</span></span></code></pre></div>
+<p>正负号函数, i == 0 =&gt; 0 , i &gt; 0 =&gt; 1 , i &lt; 0 =&gt; -1<br />
+正数二进制首尾为0, 右移31位必定为 0, 负数首位为1,无符号右移31位为 1, 0|1 =&gt; 1<br />
+负数二进制首位为1, 右移31位必定为 -1, 正数首位为0, 无符号右移31位为 0, -1|0 =&gt; -1<br />
+0 是特殊情况, 无论怎么移位都是0, 0|0 =&gt; 0</p>
+<h2 id="常见问题">常见问题</h2>
+<h2 id="潜在考点">潜在考点</h2>
+<ul>
+<li>自动拆箱，自动装箱
+<ul>
+<li>推荐阅读
+<ul>
+<li><a href="https://docs.oracle.com/javase/tutorial/java/data/autoboxing.html">Autoboxing and Unboxing</a></li>
+</ul></li>
+</ul></li>
+</ul>
+<h2 id="补充">补充</h2>
+<ol type="1">
+<li>关于左移,右移,无符号右移</li>
+</ol>
+<ul>
+<li>左移:（正负数皆右补0）</li>
+<li>右移：（正数左补0、负数左补1）</li>
+<li>无符号右移: (正负数皆左补0)</li>
+</ul>
+<ol start="2" type="1">
+<li>关于 非~,与&amp;,或|,异或^</li>
+</ol>
+<ul>
+<li>非, 按位取反, 1-&gt;0, 0-&gt;1, e.g 0000 1111 -&gt; 1111 0000</li>
+<li>与, 第n位均为1时结果为1,否则为0, e.g 0000 1111 &amp; 1111 0001 =&gt; 0000 0001<br />
+</li>
+<li>或, 第n位均为0时结果为0,否则为1, e.g 0000 1111 | 1111 0001 =&gt; 1111 1111<br />
+</li>
+<li>异或, 第n位相反时结果为1,否则为0, e.g 0000 1111 ^ 1111 0001 =&gt; 1111 1110<br />
+</li>
+</ul>
+<ol start="3" type="1">
+<li>关于原码,反码,补码.</li>
+</ol>
+<ul>
+<li>原码: 符号位加上真值的绝对值, 即用第一位表示符号, 其余位表示值</li>
+</ul>
+<p>e.g 15</p>
+<pre class="text"><code>00000000 00000000 0000000 00001111 原 15
+10000000 00000000 0000000 00001111 原 -15</code></pre>
+<ul>
+<li>反码: 正数的反码是其本身, 负数的反码是在其原码的基础上, 符号位不变，其余各个位取反.</li>
+</ul>
+<p>e.g 15</p>
+<pre><code>00000000 00000000 0000000 00001111 反 15
+11111111 11111111 1111111 11110000 反 -15</code></pre>
+<ul>
+<li>补码: 正数的补码就是其本身, 负数的补码是在其原码的基础上, 符号位不变, 其余各位取反, 最后+1. (即在反码的基础上+1)</li>
+</ul>
+<pre class="text"><code>00000000 00000000 0000000 00001111 补 15
+11111111 11111111 1111111 11110001 补 -15</code></pre>
+<h2 id="后记">后记</h2>
+<ol type="1">
+<li>暂不分析 native 方法实现</li>
+</ol>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://juejin.im/post/5992b1986fb9a03c3223ce32">从JDK源码角度看Integer</a></li>
+<li><a href="https://www.cnblogs.com/zhangziqiu/archive/2011/03/30/computercode.html">原码, 反码, 补码 详解</a></li>
+</ul>
+</div>
+</div>
+</div>
+</main>
+
+<div class="wrapper">
+<div id="disqus_thread"></div>
+<script>
+
+/**
+*  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+*  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
+var disqus_config = function () {
+this.page.url = "https://www.guxingke.com//wiki/java-lang-Integer-source.html";  // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = ""; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+s.src = 'https://guxingke.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+
+
+<footer class="site-footer">
+<div class="wrapper">
+<div class="footer-col-wrapper">
+<div class="footer-col footer-col-1">
+
+<a href="/page/about.html">
+<span class="icon icon--me">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+<path d="M20 21.193l-.003.807h-19.993l-.004-.833c-.009-2.224.088-3.495 2.647-4.086 2.805-.647 5.573-1.227 4.242-3.682-3.943-7.275-1.123-11.399 3.111-11.399 4.153 0 7.043 3.971 3.11 11.398-1.292 2.44 1.375 3.02 4.242 3.682 2.57.594 2.657 1.873 2.648 4.113zm4-17.193h-7v2h7v-2zm0 4h-7v2h7v-2zm0 4h-7v2h7v-2z"></path>
+</svg>
+</span>
+</a>
+
+<a href="/page/projects.html">
+<span class="icon icon--project">
+<svg t="1563598923914" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="1567" width="24" height="24"><path d="M775 536.2 456.8 536.2c-26 0-47-21-47-47 0-26 21-47 47-47l318.2 0c26 0 47 21 47 47C822 515.2 800.8 536.2 775 536.2L775 536.2z" p-id="1568"></path><path d="M775 722.2 456.8 722.2c-26 0-47-21-47-47s21-47 47-47l318.2 0c26 0 47 21 47 47S800.8 722.2 775 722.2L775 722.2z" p-id="1569"></path><path d="M991 875.8 991 281.4c0-72.2-65.8-65.4-65.8-65.4s-392.8 0.4-371.8 0c-22.4 0.4-33.8-11.8-33.8-11.8s-15.6-27-43.8-69.4c-29.4-44.6-63.6-37.4-63.6-37.4L123 97.4C42.8 97.4 42 174.6 42 174.6L42 872c0 86 65 75.4 65 75.4l824.2 0C1000.8 947.4 991 875.8 991 875.8L991 875.8zM932 840.6c0 26.6-21.4 48-48 48L149 888.6c-26.6 0-48-21.4-48-48L101 343c0-26.6 21.4-48 48-48L884 295c26.6 0 48 21.4 48 48L932 840.6 932 840.6z" p-id="1570"></path><path d="M282.2 489.2m-50.2 0a25.1 25.1 0 1 0 100.4 0 25.1 25.1 0 1 0-100.4 0Z" p-id="1571"></path><path d="M282.2 675.2m-50.2 0a25.1 25.1 0 1 0 100.4 0 25.1 25.1 0 1 0-100.4 0Z" p-id="1572"></path></svg>
+</span>
+</a>
+
+<a href="https://github.com/guxingke">
+<span class="icon icon--github">
+<svg viewBox="0 0 16 16">
+<path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"></path>
+</svg>
+</span>
+</a>
+
+<a href="https://twitter.com/guxingke">
+<span class="icon icon--twitter">
+<svg viewBox="0 0 16 16">
+<path fill="#828282" d="M15.969,3.058c-0.586,0.26-1.217,0.436-1.878,0.515c0.675-0.405,1.194-1.045,1.438-1.809c-0.632,0.375-1.332,0.647-2.076,0.793c-0.596-0.636-1.446-1.033-2.387-1.033c-1.806,0-3.27,1.464-3.27,3.27 c0,0.256,0.029,0.506,0.085,0.745C5.163,5.404,2.753,4.102,1.14,2.124C0.859,2.607,0.698,3.168,0.698,3.767 c0,1.134,0.577,2.135,1.455,2.722C1.616,6.472,1.112,6.325,0.671,6.08c0,0.014,0,0.027,0,0.041c0,1.584,1.127,2.906,2.623,3.206 C3.02,9.402,2.731,9.442,2.433,9.442c-0.211,0-0.416-0.021-0.615-0.059c0.416,1.299,1.624,2.245,3.055,2.271 c-1.119,0.877-2.529,1.4-4.061,1.4c-0.264,0-0.524-0.015-0.78-0.046c1.447,0.928,3.166,1.469,5.013,1.469 c6.015,0,9.304-4.983,9.304-9.304c0-0.142-0.003-0.283-0.009-0.423C14.976,4.29,15.531,3.714,15.969,3.058z"></path>
+</svg>
+</span>
+</a>
+
+<a href="/page/links.html">
+<span class="icon icon--links">
+<svg t="1597890241324" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2110" width="24" height="24"><path d="M262.4 1017.6c-64 0-128-25.6-179.2-76.8-102.4-102.4-102.4-262.4 0-364.8l134.4-134.4 89.6 89.6-134.4 134.4c-51.2 51.2-51.2 128 0 179.2 51.2 51.2 128 51.2 179.2 0l179.2-179.2c25.6-25.6 38.4-57.6 38.4-89.6S556.8 512 537.6 486.4L467.2 422.4l89.6-89.6 70.4 70.4C672 448 697.6 512 697.6 582.4c0 70.4-25.6 134.4-76.8 179.2l-179.2 179.2C396.8 992 326.4 1017.6 262.4 1017.6zM467.2 691.2 396.8 627.2c-102.4-102.4-102.4-262.4 0-364.8l179.2-179.2c102.4-102.4 262.4-102.4 364.8 0 102.4 102.4 102.4 262.4 0 364.8l-134.4 134.4-89.6-89.6 134.4-134.4c51.2-51.2 51.2-128 0-179.2-51.2-51.2-134.4-51.2-179.2 0L486.4 352c-51.2 51.2-51.2 128 0 179.2l70.4 70.4L467.2 691.2z" p-id="2111"></path></svg>
+</svg>
+</span>
+</a>
+
+</div>
+</div>
+</div>
+</footer>
+</body>
+</html>

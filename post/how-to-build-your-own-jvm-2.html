@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+<title>如何构建你自己的 JVM (1) 解释器</title>
+<style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+</style>
+<style>
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+  position: relative; left: -1em; text-align: right; vertical-align: baseline;
+  border: none; display: inline-block;
+  -webkit-touch-callout: none; -webkit-user-select: none;
+  -khtml-user-select: none; -moz-user-select: none;
+  -ms-user-select: none; user-select: none;
+  padding: 0 4px; width: 4em;
+  background-color: #232629;
+  color: #7a7c7d;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #7a7c7d;  padding-left: 4px; }
+div.sourceCode
+{ color: #cfcfc2; background-color: #232629; }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span { color: #cfcfc2; } /* Normal */
+code span.al { color: #95da4c; background-color: #4d1f24; font-weight: bold; } /* Alert */
+code span.an { color: #3f8058; } /* Annotation */
+code span.at { color: #2980b9; } /* Attribute */
+code span.bn { color: #f67400; } /* BaseN */
+code span.bu { color: #7f8c8d; } /* BuiltIn */
+code span.cf { color: #fdbc4b; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #3daee9; } /* Char */
+code span.cn { color: #27aeae; font-weight: bold; } /* Constant */
+code span.co { color: #7a7c7d; } /* Comment */
+code span.cv { color: #7f8c8d; } /* CommentVar */
+code span.do { color: #a43340; } /* Documentation */
+code span.dt { color: #2980b9; } /* DataType */
+code span.dv { color: #f67400; } /* DecVal */
+code span.er { color: #da4453; text-decoration: underline; } /* Error */
+code span.ex { color: #0099ff; font-weight: bold; } /* Extension */
+code span.fl { color: #f67400; } /* Float */
+code span.fu { color: #8e44ad; } /* Function */
+code span.im { color: #27ae60; } /* Import */
+code span.in { color: #c45b00; } /* Information */
+code span.kw { color: #cfcfc2; font-weight: bold; } /* Keyword */
+code span.op { color: #cfcfc2; } /* Operator */
+code span.ot { color: #27ae60; } /* Other */
+code span.pp { color: #27ae60; } /* Preprocessor */
+code span.re { color: #2980b9; background-color: #153042; } /* RegionMarker */
+code span.sc { color: #3daee9; } /* SpecialChar */
+code span.ss { color: #da4453; } /* SpecialString */
+code span.st { color: #f44f4f; } /* String */
+code span.va { color: #27aeae; } /* Variable */
+code span.vs { color: #da4453; } /* VerbatimString */
+code span.wa { color: #da4453; } /* Warning */
+</style>
+<!--[if lt IE 9]>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+<![endif]-->
+<link rel="stylesheet" href="/assets/main.css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-F2PYD8JK1Z"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-F2PYD8JK1Z');
+</script>
+</head>
+<body>
+<header class="site-header" role="banner">
+<div class="wrapper">
+  <a class="site-title" href="/">孤星可</a>
+
+  <nav><ul class="nav-list clearfix">
+    <li class="nav-item"><a href="/" alt="首页" title="首页">首页</a></li>
+    <li class="nav-item"><a href="/wiki/index.html" alt="Wiki" title="Wiki">Wiki</a></li>
+    <li class="nav-item"><a href="/page/about.html" alt="关于" title="关于">关于</a></li>
+  </ul></nav>
+
+  <span class="site-desc">人生天地间 忽如远行客</span>
+</div>
+</header>
+
+<main class="page-content" aria-label="Content">
+<div class="wrapper">
+<div class="post">
+<h3 class="post-title">如何构建你自己的 JVM (1) 解释器</h3>
+<div class="post-date"><span>最后修改时间<span> 2021-05-07</div>
+<div class="post-meta">
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#x00-几点概念">0x00 几点概念</a>
+<ul>
+<li><a href="#解释器">解释器</a></li>
+<li><a href="#指令">指令</a></li>
+<li><a href="#寄存器">寄存器</a></li>
+<li><a href="#栈">栈</a></li>
+<li><a href="#局部变量表">局部变量表</a></li>
+<li><a href="#操作数栈">操作数栈</a></li>
+</ul></li>
+<li><a href="#x01-寄存器还是栈">0x01 寄存器还是栈</a>
+<ul>
+<li><a href="#场景">场景</a></li>
+<li><a href="#寄存器方案">寄存器方案</a></li>
+<li><a href="#栈方案">栈方案</a></li>
+<li><a href="#混合方案-结合寄存器和栈的方案即-jvm-的方案">混合方案, 结合寄存器和栈的方案(即 JVM 的方案)</a></li>
+<li><a href="#简单比较">简单比较</a></li>
+</ul></li>
+<li><a href="#x02-解释器核心">0x02 解释器核心</a></li>
+<li><a href="#x03-简单代码实现">0x03 简单代码实现</a>
+<ul>
+<li><a href="#寄存器-1">寄存器</a></li>
+<li><a href="#栈-1">栈</a></li>
+<li><a href="#混合">混合</a></li>
+<li><a href="#关于上方代码">关于上方代码</a></li>
+</ul></li>
+<li><a href="#x04-小结">0x04 小结</a></li>
+<li><a href="#x05-预告">0x05 预告</a></li>
+<li><a href="#x06-faq">0x06 FAQ</a></li>
+</ul>
+</nav>
+</div>
+<div class="post-content">
+<blockquote>
+<p>种一棵树最好的时间是十年前, 其次是现在.</p>
+</blockquote>
+<h2 id="x00-几点概念">0x00 几点概念</h2>
+<h3 id="解释器">解释器</h3>
+<blockquote>
+<p><a href="https://zh.wikipedia.org/wiki/%E7%9B%B4%E8%AD%AF%E5%99%A8">解释器</a>, 是一种程序，能够把编程语言一行一行解释运行。解释器像是一位“中间人”，每次运行程序时都要先转成另一种语言再作运行，因此解释器的程序运行速度比较缓慢。它不会一次把整个程序翻译出来，而是每翻译一行程序叙述就立刻运行，然后再翻译下一行，再运行，如此不停地进行下去。</p>
+</blockquote>
+<h3 id="指令">指令</h3>
+<p>一些相关的概念, 汇编指令, JVM 字节码指令.<br />
+指令一般很简单, 描述了一个具体的操作. 比如</p>
+<p>汇编指令<br />
+mov &amp;ex, 1 =&gt; 将整数 1 放到寄存器 ex 里.</p>
+<p>字节码指令<br />
+bpush 1 =&gt; 将 byte 1 放到操作数栈顶.</p>
+<h3 id="寄存器">寄存器</h3>
+<p><a href="https://zh.wikipedia.org/wiki/%E5%AF%84%E5%AD%98%E5%99%A8">寄存器</a>, 简单来说寄存器就是个 Map. 可以根据寄存器地址(key)对其进行存取(value). 主要操作 get(key) , put(key,value)</p>
+<h3 id="栈">栈</h3>
+<p>简单来讲, 后进先出, 只支持 push 和 pop 操作.<br />
+push : 将某个值放到栈的栈顶, 栈大小加 1.<br />
+pop : 将栈的栈顶的值弄出来, 栈大小减 1.</p>
+<h3 id="局部变量表">局部变量表</h3>
+<p>栈帧内部的数据结构, 是个数组. 通过数组位置访问, e.g array[0], array[1]. 换个角度来看, 其实可以认为是个特殊的寄存器. 只不过 key 是下标而已.</p>
+<h3 id="操作数栈">操作数栈</h3>
+<p>栈帧内部数据结构, 同栈.</p>
+<h2 id="x01-寄存器还是栈">0x01 寄存器还是栈</h2>
+<blockquote>
+<p>脱离业务场景的技术设计都是耍流氓. – 尼古拉斯.赵四</p>
+</blockquote>
+<h3 id="场景">场景</h3>
+<p>伪代码如下.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">int</span> a = 1 + 1<span class="kw">;</span> </span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="ex">int</span> b = 2 + 2<span class="kw">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="ex">int</span> c = 0<span class="kw">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="ex">int</span> d = b - a<span class="kw">;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="ex">int</span> d = d - c<span class="kw">;</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="ex">println</span>(d)</span></code></pre></div>
+<p>如果正确运行, 必然输出 2.<br />
+自动化的前提是能手动化. 所以人肉编译一下吧.</p>
+<h3 id="寄存器方案">寄存器方案</h3>
+<p>生成指令格式, <code>inst [value|address]+</code><br />
+e.g</p>
+<pre><code>
+mov &amp;0 1        =&gt; 把数值 1 放到寄存器 0 里    
+add &amp;3 &amp;0 &amp;1 &amp;2 =&gt; 把 寄存器 0 ,寄存器 1,  寄存器 2 里的值相加, 并把结果放到 寄存器 3 里.     
+sub &amp;3 &amp;0 &amp;1 &amp;2 =&gt; 把 寄存器 0 里的值 减去 寄存器 1,  寄存器 2 里的值, 并把结果放到 寄存器 3 里.     
+println &amp;3      =&gt; 取出 寄存器 3 的值 并输出.     </code></pre>
+<p>生成的指令代码如下. 为方便理解, 双斜杠之后为注释. 表明操作之后寄存器或栈的状态</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="ex">mov</span> <span class="kw">&amp;</span><span class="ex">0</span> 1        // <span class="dt">{0:1}</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="ex">mov</span> <span class="kw">&amp;</span><span class="ex">1</span> 1        // {0:1, 1:1}</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="ex">add</span> <span class="kw">&amp;</span><span class="ex">2</span> <span class="kw">&amp;</span><span class="ex">0</span> <span class="kw">&amp;</span><span class="ex">1</span>    // {0:1, 1:1, 2:2}</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="ex">mov</span> <span class="kw">&amp;</span><span class="ex">3</span> 2        // {0:1, 1:1, 2:2, 3:2}</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="ex">mov</span> <span class="kw">&amp;</span><span class="ex">4</span> 2        // {0:1, 1:1, 2:2, 3:2, 4:2}</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="ex">add</span> <span class="kw">&amp;</span><span class="ex">5</span> <span class="kw">&amp;</span><span class="ex">3</span> <span class="kw">&amp;</span><span class="ex">4</span>    // {0:1, 1:1, 2:2, 3:2, 4:2, 5:4}</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="ex">mov</span> <span class="kw">&amp;</span><span class="ex">6</span> 0        // {0:1, 1:1, 2:2, 3:2, 4:2, 5:4, 6:0}</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="ex">sub</span> <span class="kw">&amp;</span><span class="ex">7</span> <span class="kw">&amp;</span><span class="ex">5</span> <span class="kw">&amp;</span><span class="ex">2</span>    // {0:1, 1:1, 2:2, 3:2, 4:2, 5:4, 6:0, 7:2}</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="ex">sub</span> <span class="kw">&amp;</span><span class="ex">8</span> <span class="kw">&amp;</span><span class="ex">7</span> <span class="kw">&amp;</span><span class="ex">6</span>    // {0:1, 1:1, 2:2, 3:2, 4:2, 5:4, 6:0, 7:2, 8:2} </span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="ex">println</span> <span class="kw">&amp;</span><span class="ex">8</span>      // {0:1, 1:1, 2:2, 3:2, 4:2, 5:4, 6:0, 7:2, 8:2} </span></code></pre></div>
+<h3 id="栈方案">栈方案</h3>
+<p>生成指令格式 <code>inst [value]{0,1}</code><br />
+e.g</p>
+<pre><code>
+push 1   =&gt; 将数值 1 推到栈顶. (..) -&gt; (..,1)  
+add      =&gt; 将栈顶的两个数值相加, 并将结果放到栈顶. (..,v1,v2) -&gt; (..,v1+v2)  
+sub      =&gt; 假设栈顶值为v2, (..,v1,v2) -&gt; (..,v1-v2)  
+swap     =&gt; 交换栈顶两个元素 (v1,v2) -&gt; (v2,v1)  
+swap1    =&gt; 交换栈上第二,第三位置 (v1,v2,x) -&gt; (v2,v1,x)  
+println  =&gt; 栈顶数值出站, 并将结果输出. (..,1) -&gt; (..)  </code></pre>
+<p>生成的指令代码如下. 为方便理解, 双斜杠之后为注释. 表明操作之后寄存器或栈的状态</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="ex">push</span> 1  // (1)</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="ex">push</span> 1  // (1, 1)</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="ex">add</span>     // (2)</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="ex">push</span> 2  // (2, 2)</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="ex">push</span> 2  // (2, 2, 2)</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="ex">add</span>     // (2, 4)</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="ex">push</span> 0  // (2, 4, 0)</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="ex">swap</span>    // (2, 0, 4)</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a><span class="ex">swap1</span>   // (0, 2, 4)</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a><span class="ex">swap</span>    // (0, 4, 2)</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a><span class="ex">sub</span>     // (0, 2)</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a><span class="ex">swap</span>    // (2, 0)</span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a><span class="ex">sub</span>     // (2)</span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a><span class="ex">println</span>  // ()</span></code></pre></div>
+<h3 id="混合方案-结合寄存器和栈的方案即-jvm-的方案">混合方案, 结合寄存器和栈的方案(即 JVM 的方案)</h3>
+<p>e.g:</p>
+<pre><code>
+load   =&gt; 从寄存器中取值并 push 到操作数栈中.  
+store  =&gt; 操作数栈顶数值出栈, 并存放到寄存器中.  </code></pre>
+<p>生成的指令代码如下. 为方便理解, 双斜杠之后为注释. 表明操作之后寄存器或栈的状态</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="ex">push</span> 1    // (1)     {}</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="ex">push</span> 1    // (1, 1)  {}</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="ex">add</span>       // (2)     {}</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="ex">store</span> <span class="kw">&amp;</span><span class="ex">0</span>  // ()      <span class="dt">{0:2}</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="ex">push</span> 2    // (2)     <span class="dt">{0:2}</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="ex">push</span> 2    // (2, 2)  <span class="dt">{0:2}</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="ex">add</span>       // (4)     <span class="dt">{0:2}</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a><span class="ex">store</span> <span class="kw">&amp;</span><span class="ex">1</span>  // ()      {<span class="ex">0</span>:2, 1:4}</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a><span class="ex">push</span> 0    // (0)     {<span class="ex">0</span>:2, 1:4}</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a><span class="ex">store</span> <span class="kw">&amp;</span><span class="ex">2</span>  // ()      {<span class="ex">0</span>:2, 1:4, 2:0}</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a><span class="ex">load</span> <span class="kw">&amp;</span><span class="ex">1</span>   // (4)     {<span class="ex">0</span>:2, 1:4, 2:0}</span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a><span class="ex">load</span> <span class="kw">&amp;</span><span class="ex">0</span>   // (4, 2)  {<span class="ex">0</span>:2, 1:4, 2:0}</span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a><span class="ex">sub</span>       // (2)     {<span class="ex">0</span>:2, 1:4, 2:0}</span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a><span class="ex">store</span> <span class="kw">&amp;</span><span class="ex">3</span>  // ()      {<span class="ex">0</span>:2, 1:4, 2:0, 3:2}</span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a><span class="ex">load</span> <span class="kw">&amp;</span><span class="ex">3</span>   // (2)     {<span class="ex">0</span>:2, 1:4, 2:2, 3:2}</span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a><span class="ex">load</span> <span class="kw">&amp;</span><span class="ex">2</span>   // (2, 0)  {<span class="ex">0</span>:2, 1:4, 2:2, 3:2}</span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a><span class="ex">sub</span>       // (2)     {<span class="ex">0</span>:2, 1:4, 2:2, 3:2}</span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a><span class="ex">store</span> <span class="va">$4</span>  // ()      {<span class="ex">0</span>:2, 1:4, 2:2, 3:2, 4:2}</span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a><span class="ex">load</span> <span class="va">$4</span>   // (2)     {<span class="ex">0</span>:2, 1:4, 2:2, 3:2, 4:2}</span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a><span class="ex">println</span>   // ()      {<span class="ex">0</span>:2, 1:4, 2:2, 3:2, 4:2}</span></code></pre></div>
+<h3 id="简单比较">简单比较</h3>
+<p>简单场景下, 三种方案均可满足需求.<br />
+其中寄存器方案对应这计算机物理实现. CPU 的处理便是基于寄存器的. 优点性能高, 数据的搬运次数少, 缺点指令复杂.<br />
+纯粹基于栈的方案, 貌似没有, 因为只有 push pop 两种操作, 在局部变量较多的情况下, 数据需要频繁搬运. 优点是指令简单. 方便移植.<br />
+混合方案, 集两家之长, 在移植性和效率上的折中方案.</p>
+<h2 id="x02-解释器核心">0x02 解释器核心</h2>
+<p>如上篇预告. 解释器的核心是一个循环.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="kw">do</span> <span class="kw">{</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="ex">获取下一个指令</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    <span class="ex">解释指令</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="kw">}</span> <span class="kw">while</span> <span class="kw">(</span><span class="ex">还有指令</span><span class="kw">)</span>;</span></code></pre></div>
+<p>架构图如下<br />
+<img src="http://assets.processon.com/chart_image/5dfc461be4b0b6bdf104330a.png" alt="mini-jvm-1" /></p>
+<h2 id="x03-简单代码实现">0x03 简单代码实现</h2>
+<p><a href="https://github.com/guxingke/demo/blob/c3d7156443c94bb2b770c821855f98b28cb101a9/interpreter-demo/README.md">INTERPRETER-DEMO</a></p>
+<h3 id="寄存器-1">寄存器</h3>
+<div class="sourceCode" id="cb9"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="co">// 核心循环</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">public</span> <span class="dt">void</span> <span class="fu">run</span>() {</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">List</span>&lt;Inst&gt; insts = <span class="fu">genInsts</span>();</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> size = insts.<span class="fu">size</span>();</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> pc = <span class="dv">0</span>;</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>    <span class="kw">while</span> (pc &lt; size) {</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>      Inst inst = insts.<span class="fu">get</span>(pc);</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>      inst.<span class="fu">execute</span>();</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>      pc++;</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a><span class="co">// Add 指令实现</span></span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> AddInst <span class="kw">implements</span> Inst {</span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>  <span class="kw">public</span> <span class="dt">final</span> <span class="bu">Integer</span> targetAddress;</span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>  <span class="kw">public</span> <span class="dt">final</span> <span class="bu">Integer</span>[] sourceAddresses;</span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">AddInst</span>(<span class="bu">Integer</span> targetAddress, <span class="bu">Integer</span><span class="kw">... </span>sourceAddresses) {</span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>    <span class="kw">this</span>.<span class="fu">targetAddress</span> = targetAddress;</span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a>    <span class="kw">this</span>.<span class="fu">sourceAddresses</span> = sourceAddresses;</span>
+<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a>  <span class="at">@Override</span></span>
+<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a>  <span class="kw">public</span> <span class="dt">void</span> <span class="fu">execute</span>() {</span>
+<span id="cb9-29"><a href="#cb9-29" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> sum = <span class="dv">0</span>;</span>
+<span id="cb9-30"><a href="#cb9-30" aria-hidden="true" tabindex="-1"></a>    <span class="kw">for</span> (<span class="bu">Integer</span> sourceAddress : sourceAddresses) {</span>
+<span id="cb9-31"><a href="#cb9-31" aria-hidden="true" tabindex="-1"></a>      sum += RegisterDemo.<span class="fu">REGISTER</span>.<span class="fu">get</span>(sourceAddress);</span>
+<span id="cb9-32"><a href="#cb9-32" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb9-33"><a href="#cb9-33" aria-hidden="true" tabindex="-1"></a>    RegisterDemo.<span class="fu">REGISTER</span>.<span class="fu">put</span>(targetAddress, sum);</span>
+<span id="cb9-34"><a href="#cb9-34" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb9-35"><a href="#cb9-35" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>代码地址: <a href="https://github.com/guxingke/demo/blob/c3d7156443c94bb2b770c821855f98b28cb101a9/interpreter-demo/src/main/java/com/gxk/demo/register/RegisterDemo.java">寄存器 DEMO</a></p>
+<h3 id="栈-1">栈</h3>
+<div class="sourceCode" id="cb10"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="co">// 核心循环</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">public</span> <span class="dt">void</span> <span class="fu">run</span>() {</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">List</span>&lt;Inst&gt; insts = <span class="fu">genInsts</span>();</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> size = insts.<span class="fu">size</span>();</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> pc = <span class="dv">0</span>;</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>    <span class="kw">while</span> (pc &lt; size) {</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>      Inst inst = insts.<span class="fu">get</span>(pc);</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>      inst.<span class="fu">execute</span>();</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>      pc++;</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a><span class="co">// Add 指令实现</span></span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> AddInst <span class="kw">implements</span> Inst {</span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>  <span class="at">@Override</span></span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a>  <span class="kw">public</span> <span class="dt">void</span> <span class="fu">execute</span>() {</span>
+<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a>    <span class="bu">Integer</span> v2 = StackDemo.<span class="fu">STACK</span>.<span class="fu">pop</span>();</span>
+<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a>    <span class="bu">Integer</span> v1 = StackDemo.<span class="fu">STACK</span>.<span class="fu">pop</span>();</span>
+<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a>    StackDemo.<span class="fu">STACK</span>.<span class="fu">push</span>(v1 + v2);</span>
+<span id="cb10-25"><a href="#cb10-25" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb10-26"><a href="#cb10-26" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>地址: <a href="https://github.com/guxingke/demo/blob/c3d7156443c94bb2b770c821855f98b28cb101a9/interpreter-demo/src/main/java/com/gxk/demo/stack/StackDemo.java">栈 DEMO</a></p>
+<h3 id="混合">混合</h3>
+<div class="sourceCode" id="cb11"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="co">// 核心循环</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">public</span> <span class="dt">void</span> <span class="fu">run</span>() {</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">List</span>&lt;Inst&gt; insts = <span class="fu">genInsts</span>();</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> size = insts.<span class="fu">size</span>();</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> pc = <span class="dv">0</span>;</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>    <span class="kw">while</span> (pc &lt; size) {</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>      Inst inst = insts.<span class="fu">get</span>(pc);</span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>      inst.<span class="fu">execute</span>();</span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>      pc++;</span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a><span class="co">// Add 指令实现</span></span>
+<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> AddInst <span class="kw">implements</span> Inst {</span>
+<span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-20"><a href="#cb11-20" aria-hidden="true" tabindex="-1"></a>  <span class="at">@Override</span></span>
+<span id="cb11-21"><a href="#cb11-21" aria-hidden="true" tabindex="-1"></a>  <span class="kw">public</span> <span class="dt">void</span> <span class="fu">execute</span>() {</span>
+<span id="cb11-22"><a href="#cb11-22" aria-hidden="true" tabindex="-1"></a>    <span class="bu">Integer</span> v2 = HybridDemo.<span class="fu">STACK</span>.<span class="fu">pop</span>();</span>
+<span id="cb11-23"><a href="#cb11-23" aria-hidden="true" tabindex="-1"></a>    <span class="bu">Integer</span> v1 = HybridDemo.<span class="fu">STACK</span>.<span class="fu">pop</span>();</span>
+<span id="cb11-24"><a href="#cb11-24" aria-hidden="true" tabindex="-1"></a>    HybridDemo.<span class="fu">STACK</span>.<span class="fu">push</span>(v1 + v2);</span>
+<span id="cb11-25"><a href="#cb11-25" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb11-26"><a href="#cb11-26" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>地址: <a href="https://github.com/guxingke/demo/blob/c3d7156443c94bb2b770c821855f98b28cb101a9/interpreter-demo/src/main/java/com/gxk/demo/hybrid/HybridDemo.java">混合 DEMO</a></p>
+<h3 id="关于上方代码">关于上方代码</h3>
+<p>针对具体场景实现, 刚好能用. 三个方案, 每个方案均不超过 100 行代码. 回上篇问题, 实现一个简单的解释器, 10 分钟够不够?<br />
+自然是够的, 有兴趣不妨试着写一下.</p>
+<h2 id="x04-小结">0x04 小结</h2>
+<p>本文讨论了解释器实现的三种方案, 并就简单的案例分别实现了相应的解释器.<br />
+mini-jvm 便是从这简单的核心中慢慢扩展而来. 由于 JVM 选择的是混合方案, 后续的重点就只会在混合方案上了.</p>
+<p>!!! 解释器的核心实现尤为重要, 如果此文并没有并没有让读者理解, 一定是文章的问题, 欢迎提出你的问题, 已迭代此文.</p>
+<h2 id="x05-预告">0x05 预告</h2>
+<ol type="1">
+<li>当前的解释器跟 javac 编译之后的 class 一毛钱的关系都没有, 该有点关系了.</li>
+</ol>
+<h2 id="x06-faq">0x06 FAQ</h2>
+<ol type="1">
+<li>为什么先从解释器说起, 按照惯例, 不应该先说说 classfile 解析吗? Classfile 解析并无任何难度, 体力活, 解析完的数据是为解释器服务的. 本质上是个静态数据提供者. 非核心逻辑. 故而解释器在前.</li>
+</ol>
+</div>
+</div>
+</div>
+</main>
+
+<div class="wrapper">
+<div id="disqus_thread"></div>
+<script>
+
+/**
+*  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+*  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
+var disqus_config = function () {
+this.page.url = "https://www.guxingke.com//post/how-to-build-your-own-jvm-2.html";  // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = ""; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+s.src = 'https://guxingke.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+
+
+
+
+<footer class="site-footer">
+<div class="wrapper">
+<div class="footer-col-wrapper">
+<div class="footer-col footer-col-1">
+
+<a href="/page/about.html">
+<span class="icon icon--me">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+<path d="M20 21.193l-.003.807h-19.993l-.004-.833c-.009-2.224.088-3.495 2.647-4.086 2.805-.647 5.573-1.227 4.242-3.682-3.943-7.275-1.123-11.399 3.111-11.399 4.153 0 7.043 3.971 3.11 11.398-1.292 2.44 1.375 3.02 4.242 3.682 2.57.594 2.657 1.873 2.648 4.113zm4-17.193h-7v2h7v-2zm0 4h-7v2h7v-2zm0 4h-7v2h7v-2z"></path>
+</svg>
+</span>
+</a>
+
+<a href="/page/projects.html">
+<span class="icon icon--project">
+<svg t="1563598923914" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="1567" width="24" height="24"><path d="M775 536.2 456.8 536.2c-26 0-47-21-47-47 0-26 21-47 47-47l318.2 0c26 0 47 21 47 47C822 515.2 800.8 536.2 775 536.2L775 536.2z" p-id="1568"></path><path d="M775 722.2 456.8 722.2c-26 0-47-21-47-47s21-47 47-47l318.2 0c26 0 47 21 47 47S800.8 722.2 775 722.2L775 722.2z" p-id="1569"></path><path d="M991 875.8 991 281.4c0-72.2-65.8-65.4-65.8-65.4s-392.8 0.4-371.8 0c-22.4 0.4-33.8-11.8-33.8-11.8s-15.6-27-43.8-69.4c-29.4-44.6-63.6-37.4-63.6-37.4L123 97.4C42.8 97.4 42 174.6 42 174.6L42 872c0 86 65 75.4 65 75.4l824.2 0C1000.8 947.4 991 875.8 991 875.8L991 875.8zM932 840.6c0 26.6-21.4 48-48 48L149 888.6c-26.6 0-48-21.4-48-48L101 343c0-26.6 21.4-48 48-48L884 295c26.6 0 48 21.4 48 48L932 840.6 932 840.6z" p-id="1570"></path><path d="M282.2 489.2m-50.2 0a25.1 25.1 0 1 0 100.4 0 25.1 25.1 0 1 0-100.4 0Z" p-id="1571"></path><path d="M282.2 675.2m-50.2 0a25.1 25.1 0 1 0 100.4 0 25.1 25.1 0 1 0-100.4 0Z" p-id="1572"></path></svg>
+</span>
+</a>
+
+<a href="https://github.com/guxingke">
+<span class="icon icon--github">
+<svg viewBox="0 0 16 16">
+<path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"></path>
+</svg>
+</span>
+</a>
+
+<a href="https://twitter.com/guxingke">
+<span class="icon icon--twitter">
+<svg viewBox="0 0 16 16">
+<path fill="#828282" d="M15.969,3.058c-0.586,0.26-1.217,0.436-1.878,0.515c0.675-0.405,1.194-1.045,1.438-1.809c-0.632,0.375-1.332,0.647-2.076,0.793c-0.596-0.636-1.446-1.033-2.387-1.033c-1.806,0-3.27,1.464-3.27,3.27 c0,0.256,0.029,0.506,0.085,0.745C5.163,5.404,2.753,4.102,1.14,2.124C0.859,2.607,0.698,3.168,0.698,3.767 c0,1.134,0.577,2.135,1.455,2.722C1.616,6.472,1.112,6.325,0.671,6.08c0,0.014,0,0.027,0,0.041c0,1.584,1.127,2.906,2.623,3.206 C3.02,9.402,2.731,9.442,2.433,9.442c-0.211,0-0.416-0.021-0.615-0.059c0.416,1.299,1.624,2.245,3.055,2.271 c-1.119,0.877-2.529,1.4-4.061,1.4c-0.264,0-0.524-0.015-0.78-0.046c1.447,0.928,3.166,1.469,5.013,1.469 c6.015,0,9.304-4.983,9.304-9.304c0-0.142-0.003-0.283-0.009-0.423C14.976,4.29,15.531,3.714,15.969,3.058z"></path>
+</svg>
+</span>
+</a>
+
+<a href="/page/links.html">
+<span class="icon icon--links">
+<svg t="1597890241324" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2110" width="24" height="24"><path d="M262.4 1017.6c-64 0-128-25.6-179.2-76.8-102.4-102.4-102.4-262.4 0-364.8l134.4-134.4 89.6 89.6-134.4 134.4c-51.2 51.2-51.2 128 0 179.2 51.2 51.2 128 51.2 179.2 0l179.2-179.2c25.6-25.6 38.4-57.6 38.4-89.6S556.8 512 537.6 486.4L467.2 422.4l89.6-89.6 70.4 70.4C672 448 697.6 512 697.6 582.4c0 70.4-25.6 134.4-76.8 179.2l-179.2 179.2C396.8 992 326.4 1017.6 262.4 1017.6zM467.2 691.2 396.8 627.2c-102.4-102.4-102.4-262.4 0-364.8l179.2-179.2c102.4-102.4 262.4-102.4 364.8 0 102.4 102.4 102.4 262.4 0 364.8l-134.4 134.4-89.6-89.6 134.4-134.4c51.2-51.2 51.2-128 0-179.2-51.2-51.2-134.4-51.2-179.2 0L486.4 352c-51.2 51.2-51.2 128 0 179.2l70.4 70.4L467.2 691.2z" p-id="2111"></path></svg>
+</svg>
+</span>
+</a>
+
+</div>
+</div>
+</div>
+</footer>
+</body>
+</html>

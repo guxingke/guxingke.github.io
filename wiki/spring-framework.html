@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+<title>Spring 框架</title>
+<style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+</style>
+<style>
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+  position: relative; left: -1em; text-align: right; vertical-align: baseline;
+  border: none; display: inline-block;
+  -webkit-touch-callout: none; -webkit-user-select: none;
+  -khtml-user-select: none; -moz-user-select: none;
+  -ms-user-select: none; user-select: none;
+  padding: 0 4px; width: 4em;
+  background-color: #232629;
+  color: #7a7c7d;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #7a7c7d;  padding-left: 4px; }
+div.sourceCode
+{ color: #cfcfc2; background-color: #232629; }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span { color: #cfcfc2; } /* Normal */
+code span.al { color: #95da4c; background-color: #4d1f24; font-weight: bold; } /* Alert */
+code span.an { color: #3f8058; } /* Annotation */
+code span.at { color: #2980b9; } /* Attribute */
+code span.bn { color: #f67400; } /* BaseN */
+code span.bu { color: #7f8c8d; } /* BuiltIn */
+code span.cf { color: #fdbc4b; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #3daee9; } /* Char */
+code span.cn { color: #27aeae; font-weight: bold; } /* Constant */
+code span.co { color: #7a7c7d; } /* Comment */
+code span.cv { color: #7f8c8d; } /* CommentVar */
+code span.do { color: #a43340; } /* Documentation */
+code span.dt { color: #2980b9; } /* DataType */
+code span.dv { color: #f67400; } /* DecVal */
+code span.er { color: #da4453; text-decoration: underline; } /* Error */
+code span.ex { color: #0099ff; font-weight: bold; } /* Extension */
+code span.fl { color: #f67400; } /* Float */
+code span.fu { color: #8e44ad; } /* Function */
+code span.im { color: #27ae60; } /* Import */
+code span.in { color: #c45b00; } /* Information */
+code span.kw { color: #cfcfc2; font-weight: bold; } /* Keyword */
+code span.op { color: #cfcfc2; } /* Operator */
+code span.ot { color: #27ae60; } /* Other */
+code span.pp { color: #27ae60; } /* Preprocessor */
+code span.re { color: #2980b9; background-color: #153042; } /* RegionMarker */
+code span.sc { color: #3daee9; } /* SpecialChar */
+code span.ss { color: #da4453; } /* SpecialString */
+code span.st { color: #f44f4f; } /* String */
+code span.va { color: #27aeae; } /* Variable */
+code span.vs { color: #da4453; } /* VerbatimString */
+code span.wa { color: #da4453; } /* Warning */
+</style>
+<!--[if lt IE 9]>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+<![endif]-->
+<link rel="stylesheet" href="/assets/main.css" />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-F2PYD8JK1Z"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-F2PYD8JK1Z');
+</script>
+</head>
+<body>
+<header class="site-header" role="banner">
+<div class="wrapper">
+  <a class="site-title" href="/">孤星可</a>
+
+  <nav><ul class="nav-list clearfix">
+    <li class="nav-item"><a href="/" alt="首页" title="首页">首页</a></li>
+    <li class="nav-item"><a href="/wiki/index.html" alt="Wiki" title="Wiki">Wiki</a></li>
+    <li class="nav-item"><a href="/page/about.html" alt="关于" title="关于">关于</a></li>
+  </ul></nav>
+
+  <span class="site-desc">人生天地间 忽如远行客</span>
+</div>
+</header>
+
+<main class="page-content" aria-label="Content">
+<div class="wrapper">
+<div class="post">
+<h3 class="post-title">Spring 框架</h3>
+<div class="post-date"><span>最后修改时间<span> 2021-05-07</div>
+<div class="post-meta">
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#变更记录">变更记录</a></li>
+<li><a href="#spring-核心源码备注">Spring 核心源码备注</a>
+<ul>
+<li><a href="#abstractapplicationinvokebeanfactorypostprocessors">AbstractApplication#invokeBeanFactoryPostProcessors</a>
+<ul>
+<li><a href="#处理-beandefinitionpostprocessor">处理 <code>BeanDefinitionPostProcessor</code></a></li>
+<li><a href="#处理其他的-beanfactorypostprocessor">处理其他的 <code>BeanFactoryPostProcessor</code></a></li>
+</ul></li>
+</ul></li>
+<li><a href="#springboot2.4.0-版本">SpringBoot#2.4.0 版本</a>
+<ul>
+<li><a href="#springboot-启动流程">SpringBoot 启动流程</a></li>
+<li><a href="#configurationclasspostprocessor-与-configurationclassparser">ConfigurationClassPostProcessor 与 ConfigurationClassParser</a>
+<ul>
+<li><a href="#configurationclasspostprocessor-类">ConfigurationClassPostProcessor 类</a></li>
+</ul></li>
+<li><a href="#springboot-自动配置原理">SpringBoot 自动配置原理</a>
+<ul>
+<li><a href="#核心方法-autoconfigurationimportselector.autoconfigurationgroupprocess">核心方法 AutoConfigurationImportSelector.AutoConfigurationGroup#process</a></li>
+<li><a href="#执行自动配置">执行自动配置</a></li>
+<li><a href="#其他">其他</a></li>
+</ul></li>
+<li><a href="#springboot-starters">SpringBoot Starters</a>
+<ul>
+<li><a href="#默认生效的自动配置类">默认生效的自动配置类</a></li>
+<li><a href="#servletwebserverfactoryautoconfiguration-与-servletwebserverfactoryconfiguration.embeddedtomcat">ServletWebServerFactoryAutoConfiguration 与 ServletWebServerFactoryConfiguration.EmbeddedTomcat</a></li>
+<li><a href="#embeddedwebserverfactorycustomizerautoconfiguration">EmbeddedWebServerFactoryCustomizerAutoConfiguration</a></li>
+<li><a href="#dispatcherservletautoconfiguration">DispatcherServletAutoConfiguration</a></li>
+<li><a href="#webmvcautoconfiguration">WebMvcAutoConfiguration</a></li>
+<li><a href="#jacksonautoconfiguration">JacksonAutoConfiguration</a></li>
+</ul></li>
+</ul></li>
+<li><a href="#spring-中的扩展点">Spring 中的扩展点</a>
+<ul>
+<li><a href="#扩展点的调用时序">扩展点的调用时序</a></li>
+<li><a href="#spring-内部的应用">Spring 内部的应用</a></li>
+<li><a href="#其他框架的应用">其他框架的应用</a></li>
+</ul></li>
+<li><a href="#springboot-中的扩展点">SpringBoot 中的扩展点</a>
+<ul>
+<li><a href="#conditional-注解"><span class="citation" data-cites="Conditional">@Conditional</span> 注解</a></li>
+</ul></li>
+<li><a href="#spring-注解">Spring 注解</a>
+<ul>
+<li><a href="#bean"><span class="citation" data-cites="Bean">@Bean</span></a>
+<ul>
+<li><a href="#用法">用法</a></li>
+<li><a href="#作用">作用</a></li>
+<li><a href="#源码分析">源码分析</a></li>
+<li><a href="#相关注解">相关注解</a></li>
+</ul></li>
+<li><a href="#configuration"><span class="citation" data-cites="Configuration">@Configuration</span></a>
+<ul>
+<li><a href="#用法-1">用法</a></li>
+<li><a href="#作用-1">作用</a></li>
+<li><a href="#源码分析-1">源码分析</a></li>
+<li><a href="#相关注解-1">相关注解</a></li>
+</ul></li>
+</ul></li>
+</ul>
+</nav>
+</div>
+<div class="post-content">
+<p>Spring 框架是工厂模式的集大成者。从工厂的角度，简述 Spring 框架的核心。</p>
+<ul>
+<li>生产什么？Bean, 没有贴切的中文翻译。</li>
+<li>原材料是什么？ BeanDefinition</li>
+<li>原材料放在哪儿？ BeanDefinitionRegistry</li>
+<li>原材料如何获得？工厂成立时通过配置告知，主流两种方式，基于 xml 的配置和基于 annotation 的配置。</li>
+<li>工厂的工作流程？
+<ol type="1">
+<li>工厂初始化</li>
+<li>收集原材料 BeanDefinition</li>
+<li>按需生产 Bean, 工厂开工后优先生产需要立即生产的 Bean (lazy=false)</li>
+</ol></li>
+</ul>
+<h1 id="变更记录">变更记录</h1>
+<ul>
+<li>BeanFactoryPostProcessor</li>
+</ul>
+<h1 id="spring-核心源码备注">Spring 核心源码备注</h1>
+<h2 id="abstractapplicationinvokebeanfactorypostprocessors">AbstractApplication#invokeBeanFactoryPostProcessors</h2>
+<p>主要作用是处理 <code>BeanFactoryPostProcessor</code>, 逻辑分为两大部分，处理 <code>BeanDefinitionPostProcessor</code> 和其他的 <code>BeanFactoryPostProcessor</code>。</p>
+<div hidden="">
+<pre class="plantuml"><code>@startuml activity
+!include https://unpkg.com/plantuml-style-c4@latest/core.puml
+
+start
+
+partition 处理-BeanDefinitionPostProcessor {
+:处理入参 processors 中的 BeanDefinitionPostProcessor;
+:处理 PriorityOrdered BeanDefinitionPostProcessor;
+:处理 Ordered BeanDefinitionPostProcessor;
+
+repeat
+:处理普通 Processor;
+repeat while (还有新的 BeanDefinitionPostProcessor?)
+}
+
+partition 处理其他-BeanFactoryPostProcessor {
+:处理 BeanFactoryProcessor;
+}
+
+stop
+
+@enduml</code></pre>
+</div>
+<p><img src="https://www.plantuml.com/plantuml/svg/hLVDRXit4BxlKn3nGItW0fAi7xirKaWhRH8WLjqeHP0ZipkI2At83PTRHGqC54LIeAVc5AH1ZkcnGKv1W1poCh6JlaMvkzIA--VAacZ0XcU6ms-6Czzm_IcX7kPuXkOSU_U88oQeNgqQVYAVuKSduFju34Fo2w1QKrUQREOn2bGCnS855CpSkgOTJh33veIEqGYxFXYQgWSZ7BW2FJQGN1QZOe1dWAvLRb4l4EY4KLRPhvmGcpEVZGIwZsy2KU8Je2xR3__1jlnRCLd02N0qW7bb7ysaZUzX6wubhatcCexswj5Af54ugDPO2Q8OF1SJ6icoy4FPNNWaEYuPqvaC6jdo5_18qSNsTCnPG1rrMl_0gbkzMCUu0rp96_NmnpZJip5W0bGgSdwEgfr6fv_tavFVdH1xIkLLeLecydiJ8c3Da5mOYJouu-E70H7NhqkGnIYjeyvXlPb7gUGfXqDu602rbn5tRC5uSGYtoGXk4mgwonjt-lr1f3t5N12RU9YAxFPgORGnzXiIjrTydgPI-6lDLjEiQifiuDrkhszrqm7AYCZFH2oMsHeAYLJP7xGxxROPYVkhxBKEMWTMd0qXE7aG25XTtpovlfHIrMyphw5XAw4UPyH1Gqpzg6zABaxXBoWlisCTbPHNV2JdR9wIgXEK2uJsghr6kxDKz0YMlUba4KWpo-fNk_MKaGObjZ3DmwfqbCgpwM9vyEEhzL-hqMrQhRB0r7q11oOMddO9Uyt3evxQbzR7jDW8eUdWReNKCC8sN1MW8eWKJKdtcqFB8jFwfWoRLlPbxR0ElMIxGXflVk2bpd_omSH-QQvpbvwN5r5ZhiGJOHgUncEN1AOHdLAg_aYKEGpHrMdCAN0oA5OKaAnQsoYbYNZC5MOdRB0I6b1BPuDroUmiLtA2CBgye9A2Z-Nn87QmFm77AEdKb7iEji1qx2vpKzG5yG7-PKNaO84VhAfeGoy_1X1islHdUh-CeRn1h-97fbxoqEQkD5_TS1_cYnt0CZ5tTW79T5cm6qVBj-mkWfC5mvcx0q-zT4rk5M6VYlXLiYqeYxYxg72BkLA_-NnCE-FXgsTxK0FcR97i5EVPK_dLj0D8adBjwIuAu4w69xToDfG3QvluYlZx-3ZmWTkotgDlZRAvNC3CsKT9VggiDMsAGedVDz4ZIbj-E0SDmqics_dh9v-V_VvD5p2LNxU4Hj9JvejJpcmvjDJZvzlOxlpft-T__eQyfSv7dzx_y_db4tJ9_kzMsz4f9upBRluX306STRUjPIxjENY0nMhZnLzl_ltr9KhvZ6t2pnEPlw--V7nnyUgFY-Tl_oU8xxyEKvbDs_dJTvy-F8-IP-7mARGepHpIZLPume8Ip3F-0m00" /></p>
+<h3 id="处理-beandefinitionpostprocessor">处理 <code>BeanDefinitionPostProcessor</code></h3>
+<p>此类型的处理器可以生成新的 <code>BeanDefinition</code>, 一些外部框架与 <code>Spring</code> 集成时会用到该处理器，在 <code>Spring</code> 内部，<code>ConfigurationClassPostProcessor</code> 是个典型实现。</p>
+<p>处理逻辑如下：</p>
+<ol type="1">
+<li>先处理方法入参的 processors， 这一步可能会生成新的 <code>BeanDefinitionPostProcessor</code> 实例。</li>
+<li>按优先级，依次处理实现了 <code>PriorityOrdered</code>，<code>Ordered</code> 接口的 <code>BeanDefinitionPostProcessor</code> 实例。</li>
+<li>处理其他的 <code>BeanDefinitionPostProcessor</code> 实例, 由于每次处理都有可能产生新的 <code>BeanDefinitionPostProcessor</code> 实例, 这一步是通过循环来处理的，确保所有的 <code>BeanDefinitionPostProcessor</code> 实例都被处理过。</li>
+</ol>
+<h3 id="处理其他的-beanfactorypostprocessor">处理其他的 <code>BeanFactoryPostProcessor</code></h3>
+<p>到这一步时，所有的 <code>BeanDefinition</code> 已经生成完毕，并且没有 <code>bean</code> 被实例化，在这一步可以修改 <code>BeanDefinition</code> ，甚至可以实例化 <code>bean</code>。</p>
+<h1 id="springboot2.4.0-版本">SpringBoot#2.4.0 版本</h1>
+<h2 id="springboot-启动流程">SpringBoot 启动流程</h2>
+<p>启动流程图</p>
+<div hidden="">
+<pre class="plantuml"><code>@startuml 
+!include https://unpkg.com/plantuml-style-c4@latest/core.puml
+
+start
+
+:初始化 Listenner;
+
+partition 准备_Environment {
+:创建和配置 Environment;
+note right
+在 listener 的 staring 阶段
+可以提前创建 Environment
+end note
+}
+
+:创建 ApplicationContext;
+note right
+Servlet 环境下创建:
+AnnotationConfigServletWebServerApplicationContext
+end note
+
+:准备 ApplicationContext, 将主类添加到 BeanDefinitionRegistry 中;
+
+partition 刷新_ApplicationContext {
+:Spring 地盘了;
+note right
+调用 AbstractApplicationContext_refresh 方法
+end note
+}
+
+:执行 CommandLineRunner 和 ApplicationRunner;
+stop
+@enduml</code></pre>
+</div>
+<p><img src="https://www.plantuml.com/plantuml/svg/hLTRJnj757xVNp4A3xpmO8pD9Q18wxKtZHIi5gT2VKB3xh4zOZspcPs5a8Ydj8GqfAcg5aLDAhLLg-Ib2LNLXWRrtx1syYywUx7PzUuYiBsH89npvflld3cN6MUBK1jpt44x7Dlhn1HjL2mK56SWx-1xg-0uk0KDSX_GR3ckr5Z7PXIeQ8XT2v3RiOenRQEDJRP3Q0iriUM04bDLeObTIw072fAVpgYeumwWQzEtgEqAjCeecvwPNYK6Pmvh2lG5_WH895u5Qh4P_mzioD_J6dCv0Oxgi3CzWphInh6n0TS6q1gp64TJnU0RI0Dtq6pfN13uO5kOq40sJD-NtO5xGhL8YtQaqyYGFu07YWesjbgSkTICTglDwKMz6keODu57ybBH_wVinQDHPmAYKAHmbWfgIQsbSLBoEsrYR55vL6XsoFFrDX5mIPSiQ8eqkPMLkouHDsv8ajaizILriLXEiupa2S06t7M16dsFLKCmdkt2RTA4suH27FBcMgrM3xIVOYw8GMnCnV3oGgQt8VURahUTlLzC5V6VBS-NjK9CEUnufLAjwPMaWz8Ziat4RZzQ3I6PHlPp2-h2WXQ8Q-VHcv-RdzF3Q0Z1oQOhuFpuTWR7br16-LjEQwXVIgZA6J5H0rCdg9kSWuluPwINfkfBEUaLRiavsqb8enqY28Ic2jNIWjfNL0cMjMaECv1ckbuhL8e9enYLq4BJ5WiIA15dpS9oumTNgx_vKgMip-Sv5fqNS61YruuTmbHvSQaQhKlgmxPOygd5oTtoMqCJ6t1LWb63IBGf2JywjM5ciRh9unPB-xnok4nx6QuAQJpwXXU2V-w0XftSMASEFItFQesf51y8a_HYVUm2nsADBb96zJ5GfZW4HnVhd08F1iLv2nXyimjARfi8nrncTFm2osa3qHVl1fTjPdkfb1E4qVu1vIHyA0y7iOcTDfXAJgKcu3aO0jEMrOzDLXM46pWN9P691Tuypw8HKJvpmHsrwFVYzTA2_0Az2euClUn3eqF5i2h-Eint9q1BmzoS12NDOkvaWFftsKau9nE6Csi2IDLaJexbOOsAy5OoBYcTM9F8S9rPKZ_wV4o2SV_MCpwfEZF727QYvnbRyjKq0KgovHfRaqY0jQ4-EHPOGmwiSVpBwjyhAwu3t93v7hmrykPoHcSUlfIafygbfasMA-7z9hX4nJx7duEASjqx-CbxzSGxF9Al5KS0fS2N5SKU33plqRxtswED6jqcd8LlBDynkUw5T_hU--xmurTFU_-zGJ63PQcd_fEGarPR19oybw-H5U3BWkdz-2Noj_U3yl7vFzqtVuSspzwUdVxUVVQjz_XfY1u7bIP0pG3NzoNQ7wcsRH43-rJzfYNVWijAOky6y6qB1EfzyzRxzU7PoPDmuNMfKgcqx2zjabPakWwR_l-0fx6L0GL980XC1e4Pv1tldvsSzluyxRuxzRx-sJiuHXN0j0fDGeEeha5B1aFEeREJFvBHFdZNFJhUI8E6GM_OGT2ybyUz5y_FtkzdHFh3ySFUzw-HkYdnvTHC8srmQ79msgXxz6_thn-6uzfz_Eh3BuV-DEbWQlglrpNNJmeaZphkR2XTbdd4xFy1" /></p>
+<h2 id="configurationclasspostprocessor-与-configurationclassparser">ConfigurationClassPostProcessor 与 ConfigurationClassParser</h2>
+<p>Xml 配置基本告别历史舞台，新的应用都是基于 Annotation 配置的，在 Annotation 配置时，<span class="citation" data-cites="Configuration">@Configuration</span> 注解是绕不过去的，而这两个类是处理 <span class="citation" data-cites="Configuration">@Configuration</span> 注解的核心。</p>
+<h3 id="configurationclasspostprocessor-类">ConfigurationClassPostProcessor 类</h3>
+<ol type="1">
+<li>实现了 BeanDefinitionPostProcessor</li>
+<li>实现了 PriorityOrdered</li>
+</ol>
+<p>主要关注 <code>processConfigBeanDefinitions</code> 逻辑即可。</p>
+<div hidden="">
+<pre class="plantuml"><code>@startuml 
+!include https://unpkg.com/plantuml-style-c4@latest/core.puml
+
+start
+
+:找到所有满足条件的配置类，主要条件是带有 @Configuration 注解的类;
+
+repeat
+partition parse_候选 {
+  note right
+  ConfigurationClassParser#parse 方法
+  end note
+
+  :Process any @PropertySource annotations;
+  note right
+  @PropertySource 注解在此刻才被处理，因此有些比较特殊的配置，在此处配置并没啥用，比如配置日志配置的路径 `logging.config` 。
+  end note
+  :Process any @ComponentScan annotations;
+  note right
+  如果配置类有这个注解，会解析这个注解拿到对应的包，用 componentScanParser parse 包下的配置。
+  end note
+  :Process any @Import annotations;
+  :Process any @ImportResource annotations;
+  :Process individual @Bean methods;
+  :Process default methods on interfaces;
+  :Process superclass, if any;
+
+
+  partition import_自动配置 {
+    :AutoConfigurationImportSelector#process;
+    note right
+    导入自动配置类  XXAutoConfiguration
+    end note
+  }
+}
+
+:候选配置类-&gt;BeanDefinition;
+
+note right
+处理结束可能会产生新的候选配置
+end note
+
+repeat while(还有候选需要处理？)
+
+stop
+@enduml</code></pre>
+</div>
+<p><img src="https://www.plantuml.com/plantuml/svg/hLXRRnD757xthnYHXxHIMZbEd92B4BvI919HJ0LzWc5tR8-odbbcPnjI52c5q18kAbB3FK1fkKHK9RH8D261_1YoQ_FKlz2p5wztVKb3uesKnEUSEVDzvpQpDgOeqx705JGji7w2ghAC4l5up0Za5NnkWXW6Bf42_PwW_cHOcU4LdJF2P47EQ0IP5IqHqXRAMENJb9LG4Mi6YOLKMLB4fYRH-HY29y-PdCGLWlRr7cQwAT44PxothtU2Ae8Rl2ZHj_WhGdtn164QxtC-O0N-zcQuAIWHQ99Cz_QX2jWOEbR8li1rXcjSe9w4-mHIbmxg7sm8N0wwXYbpPStm7TbnSawcD5fY5I2D5FX5XAj8OsMg9BZ9L7-tt40-aSzwEYvK8dpvOCBvYSs6ep799V53qU9d99uQJELQ_RJ8ZvUfCiKWLQY_YVc9CfLaXvGqKfIjuCR7pvfK7ZW08DkZp8-azYUIhIXzUSHXWPmr2LFgZ5EAvA8zXIEqI8vGHi8k3ntBvIPTxL4i95MeZfbiNXvlozR3VWXmw-tt2wby_Ft9eMGc7b8s4q-dixbyEaeG6D7lg9ofHwiW0QblFp2S6XxEkE9S8tf30qC3UIyQKWfwnfIaaRxf87qHfL-_oLODSre9PGMdAYfWPhXzqo5nFlusvPL9vKSwb9UtfH1yEYBrT_1T8DGJpmuEf-gABCNGcsep0Z3BvtFnT29Y58BYMMGo--FWA1BdZ8PXu_EVrdz3W-baVgWJCJzVH10kP_HG4dgI-qUo_hgetXkBWmwqCBZ3pcWeOeLyAa1_G4J65BZVFRHcPA6-wOGjLFQTsc4duwMvAy1uznjkw_mRWsImqJ7MBKblbRSRZIqb7WYZy49pR1jYeK7dA_t-29Gj6DpKXIQdnC51qHW1mTC_7Eiu9hnZhcrqd0RhC0Ry9pmDTZhCPbjAJbBEwWdgKF2Ut3k8LMoKYHhhqAaHzu8e4hEILezDkoxmDZ2sAo8LItocKKMxzFArISpTDlrik5zAf7E3VeeV23tCeTsx2lbAE-kmcEa2h0mMQZSWPJHkTiTH_IxR3N9GC89hNV2KZTRadXZccFHk9Ni5bQTQDoeyppNGx_vyZ3eJpgrdxw0ckRg7O4TcdZ85RqrTW0GZLvdgHW4SQvgJUt9MW0DhB_pQpU_nSTCWGe5wTzyrEftBRIPpywMazLJPqMdJZeftlt4lKQ77SCx1M6pKNdXlNNvbBypPImls-kFQczVsWyTRws-gz-O_NhfUVVUo-jVwlnlNjbRNQyz-y5JsdHLhzHdOeuCmA8gqP0hi7exsw-NQyzzX9QmPYyK4qGcMCJquFE4_Wvoovkv-d5jmmyES5qT1IsK97oA-tBlnKSTUzBZBa7rhpNvz4-m8Kzs5pj4wUbHmnJbHCPj11-63JeISAS0RDLnSCGCprvinrhnPiwq7tLfQjlzyObrUjnUkrtxxmteoNxtn8x2txlyASc2yzVQ-lR9OUt-nkh1clxmI1CcnyTO-yINMsXlxxyVMpQVLnMNGmYhhsGLFPTz-QctUzgDxRxxspuhrVXwTrdYf17NofUB6uJJwC7SXpBQPREEx2mMpRRd2nlR3fI2RGAEsUNThzON7sKdknZtuntvu8oothsv2OLWhQzRRHK1fNRi4ba06AU6DlHHvcKLWixLwDGZA_n0u36w4R4RUpkOOCTfcDB2bJ8KtLjN46ZgO9X2E2f5bhaQDLFyx6r-7e21f_IKdQccOK1gAKu5zY1OT96Fk-qkZagcBwrJjfnVMbMMFhT_leobJyaWfUnmAH2FE7Rb7zpOPSwqZUO9ChMnObvw6lKA-43fviiMfQnuAxQpJuADUQmKhlpZW12DBYfIvi855Q4ElkglhlzWF7ba_hzGkleCws7hxlBhuoBxroabvo5kiqNLUMpklzHhvhBPv1-h9jroQWnbHRvf7dpj3Xkl_0G00" /></p>
+<h2 id="springboot-自动配置原理">SpringBoot 自动配置原理</h2>
+<p>从 <span class="citation" data-cites="SpringBootApplication">@SpringBootApplication</span> 注解为切入点，该注解是个组合体，集合了一堆注解，包括：</p>
+<ul>
+<li><span class="citation" data-cites="SpringBootConfiguration">@SpringBootConfiguration</span> 该注解组合了 <span class="citation" data-cites="Configuration">@Configuration</span> 注解</li>
+<li><span class="citation" data-cites="EnableAutoConfiguration">@EnableAutoConfiguration</span> 自动配置的核心注解
+<ul>
+<li><span class="citation" data-cites="AutoConfigurationPackage">@AutoConfigurationPackage</span></li>
+<li><span class="citation" data-cites="Import">@Import</span>(AutoConfigurationImportSelector.class) 导入了自动配置 Selector</li>
+</ul></li>
+<li><span class="citation" data-cites="ComponentScan">@ComponentScan</span></li>
+</ul>
+<h3 id="核心方法-autoconfigurationimportselector.autoconfigurationgroupprocess">核心方法 AutoConfigurationImportSelector.AutoConfigurationGroup#process</h3>
+<ol type="1">
+<li>通过 SpringFactoriesLoader 加载 key 为 <code>org.springframework.boot.autoconfigure.EnableAutoConfiguration</code> 的自动配置实例</li>
+<li>过滤掉重复的和启动类上通过 exclude 注明的类</li>
+<li>自动配置类初始化并且按需注入依赖的变量（context,environment 等）</li>
+</ol>
+<p>通过 process 把自动配置的 Configuration 识别出来。</p>
+<h3 id="执行自动配置">执行自动配置</h3>
+<p>自动配置的目标是把符合条件的 BeanDefinition 识别出来，放到 BeanDefinitionRegistry 里。 通过自动配置类的 <span class="citation" data-cites="Conditional">@Conditional</span> 注解内容生成 Condition, 判断 Condition 是否匹配，匹配则添加，不匹配则忽略。</p>
+<h3 id="其他">其他</h3>
+<ol type="1">
+<li>自动配置触发时机，作为 BeanDefinitionRegistryPostProcessor 接口的实现 ConfigurationClassPostProcessor 类在 AbstractApplication#invokeBeanFactoryPostProcessors 阶段被启动。</li>
+</ol>
+<h2 id="springboot-starters">SpringBoot Starters</h2>
+<ul>
+<li>默认生效了那些自动配置类?</li>
+<li>自动配置配置了什么？</li>
+</ul>
+<h3 id="默认生效的自动配置类">默认生效的自动配置类</h3>
+<p>默认配置文件 <code>spring-boot-autoconfigure-2.4.0.jar#spring.factories</code> 文件内</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.EnableAutoConfiguration</span>=<span class="kw">\</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.admin.SpringApplicationAdminJmxAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.aop.AopAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.batch.BatchAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.cache.CacheAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.cassandra.CassandraAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.context.ConfigurationPropertiesAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.context.LifecycleAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.context.MessageSourceAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.couchbase.CouchbaseAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.dao.PersistenceExceptionTranslationAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.data.cassandra.CassandraDataAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.data.cassandra.CassandraReactiveDataAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.data.cassandra.CassandraReactiveRepositoriesAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.data.cassandra.CassandraRepositoriesAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.data.couchbase.CouchbaseDataAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.data.couchbase.CouchbaseReactiveDataAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.data.couchbase.CouchbaseReactiveRepositoriesAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.data.couchbase.CouchbaseRepositoriesAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchDataAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchRepositoriesAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.data.elasticsearch.ReactiveElasticsearchRepositoriesAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.data.elasticsearch.ReactiveElasticsearchRestClientAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.data.jdbc.JdbcRepositoriesAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.data.ldap.LdapRepositoriesAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.data.mongo.MongoReactiveDataAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.data.mongo.MongoReactiveRepositoriesAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.data.mongo.MongoRepositoriesAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.data.neo4j.Neo4jDataAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.data.neo4j.Neo4jReactiveDataAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-35"><a href="#cb4-35" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.data.neo4j.Neo4jReactiveRepositoriesAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-36"><a href="#cb4-36" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.data.neo4j.Neo4jRepositoriesAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-37"><a href="#cb4-37" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.data.solr.SolrRepositoriesAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-38"><a href="#cb4-38" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.data.r2dbc.R2dbcDataAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-39"><a href="#cb4-39" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.data.r2dbc.R2dbcRepositoriesAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-40"><a href="#cb4-40" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-41"><a href="#cb4-41" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.data.redis.RedisReactiveAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-42"><a href="#cb4-42" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-43"><a href="#cb4-43" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.data.rest.RepositoryRestMvcAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-44"><a href="#cb4-44" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.data.web.SpringDataWebAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-45"><a href="#cb4-45" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.elasticsearch.ElasticsearchRestClientAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-46"><a href="#cb4-46" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-47"><a href="#cb4-47" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.freemarker.FreeMarkerAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-48"><a href="#cb4-48" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.groovy.template.GroovyTemplateAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-49"><a href="#cb4-49" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.gson.GsonAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-50"><a href="#cb4-50" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.h2.H2ConsoleAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-51"><a href="#cb4-51" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.hateoas.HypermediaAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-52"><a href="#cb4-52" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.hazelcast.HazelcastAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-53"><a href="#cb4-53" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.hazelcast.HazelcastJpaDependencyAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-54"><a href="#cb4-54" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.http.HttpMessageConvertersAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-55"><a href="#cb4-55" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.http.codec.CodecsAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-56"><a href="#cb4-56" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.influx.InfluxDbAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-57"><a href="#cb4-57" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.info.ProjectInfoAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-58"><a href="#cb4-58" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.integration.IntegrationAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-59"><a href="#cb4-59" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-60"><a href="#cb4-60" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-61"><a href="#cb4-61" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.jdbc.JdbcTemplateAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-62"><a href="#cb4-62" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.jdbc.JndiDataSourceAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-63"><a href="#cb4-63" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.jdbc.XADataSourceAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-64"><a href="#cb4-64" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-65"><a href="#cb4-65" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.jms.JmsAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-66"><a href="#cb4-66" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.jmx.JmxAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-67"><a href="#cb4-67" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.jms.JndiConnectionFactoryAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-68"><a href="#cb4-68" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.jms.activemq.ActiveMQAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-69"><a href="#cb4-69" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.jms.artemis.ArtemisAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-70"><a href="#cb4-70" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.jersey.JerseyAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-71"><a href="#cb4-71" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.jooq.JooqAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-72"><a href="#cb4-72" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.jsonb.JsonbAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-73"><a href="#cb4-73" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-74"><a href="#cb4-74" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.availability.ApplicationAvailabilityAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-75"><a href="#cb4-75" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.ldap.embedded.EmbeddedLdapAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-76"><a href="#cb4-76" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.ldap.LdapAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-77"><a href="#cb4-77" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.liquibase.LiquibaseAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-78"><a href="#cb4-78" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.mail.MailSenderAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-79"><a href="#cb4-79" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.mail.MailSenderValidatorAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-80"><a href="#cb4-80" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.mongo.embedded.EmbeddedMongoAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-81"><a href="#cb4-81" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-82"><a href="#cb4-82" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.mongo.MongoReactiveAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-83"><a href="#cb4-83" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.mustache.MustacheAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-84"><a href="#cb4-84" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.neo4j.Neo4jAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-85"><a href="#cb4-85" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-86"><a href="#cb4-86" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.quartz.QuartzAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-87"><a href="#cb4-87" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.r2dbc.R2dbcAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-88"><a href="#cb4-88" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.r2dbc.R2dbcTransactionManagerAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-89"><a href="#cb4-89" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.rsocket.RSocketMessagingAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-90"><a href="#cb4-90" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.rsocket.RSocketRequesterAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-91"><a href="#cb4-91" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.rsocket.RSocketServerAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-92"><a href="#cb4-92" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.rsocket.RSocketStrategiesAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-93"><a href="#cb4-93" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-94"><a href="#cb4-94" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-95"><a href="#cb4-95" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.security.servlet.SecurityFilterAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-96"><a href="#cb4-96" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.security.reactive.ReactiveSecurityAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-97"><a href="#cb4-97" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.security.reactive.ReactiveUserDetailsServiceAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-98"><a href="#cb4-98" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.security.rsocket.RSocketSecurityAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-99"><a href="#cb4-99" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.security.saml2.Saml2RelyingPartyAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-100"><a href="#cb4-100" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.sendgrid.SendGridAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-101"><a href="#cb4-101" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.session.SessionAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-102"><a href="#cb4-102" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.security.oauth2.client.servlet.OAuth2ClientAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-103"><a href="#cb4-103" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.security.oauth2.client.reactive.ReactiveOAuth2ClientAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-104"><a href="#cb4-104" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-105"><a href="#cb4-105" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.security.oauth2.resource.reactive.ReactiveOAuth2ResourceServerAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-106"><a href="#cb4-106" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.solr.SolrAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-107"><a href="#cb4-107" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.task.TaskExecutionAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-108"><a href="#cb4-108" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.task.TaskSchedulingAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-109"><a href="#cb4-109" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.thymeleaf.ThymeleafAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-110"><a href="#cb4-110" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.transaction.TransactionAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-111"><a href="#cb4-111" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.transaction.jta.JtaAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-112"><a href="#cb4-112" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.validation.ValidationAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-113"><a href="#cb4-113" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.web.client.RestTemplateAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-114"><a href="#cb4-114" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.web.embedded.EmbeddedWebServerFactoryCustomizerAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-115"><a href="#cb4-115" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.web.reactive.HttpHandlerAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-116"><a href="#cb4-116" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.web.reactive.ReactiveWebServerFactoryAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-117"><a href="#cb4-117" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.web.reactive.WebFluxAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-118"><a href="#cb4-118" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.web.reactive.error.ErrorWebFluxAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-119"><a href="#cb4-119" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.web.reactive.function.client.ClientHttpConnectorAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-120"><a href="#cb4-120" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.web.reactive.function.client.WebClientAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-121"><a href="#cb4-121" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.web.servlet.DispatcherServletAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-122"><a href="#cb4-122" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.web.servlet.ServletWebServerFactoryAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-123"><a href="#cb4-123" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-124"><a href="#cb4-124" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.web.servlet.HttpEncodingAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-125"><a href="#cb4-125" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.web.servlet.MultipartAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-126"><a href="#cb4-126" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-127"><a href="#cb4-127" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.websocket.reactive.WebSocketReactiveAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-128"><a href="#cb4-128" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.websocket.servlet.WebSocketServletAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-129"><a href="#cb4-129" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.websocket.servlet.WebSocketMessagingAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-130"><a href="#cb4-130" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.webservices.WebServicesAutoConfiguration</span>,<span class="kw">\</span></span>
+<span id="cb4-131"><a href="#cb4-131" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.webservices.client.WebServiceTemplateAutoConfiguration</span></span></code></pre></div>
+<p>默认生效的配置类如上。</p>
+<p>在引入 <code>spring-boot-web-starter</code> 的情况下，生效了下方配置。</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">AopAutoConfiguration</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="ex">AopAutoConfiguration.ClassProxyingConfiguration</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="ex">DispatcherServletAutoConfiguration</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="ex">DispatcherServletAutoConfiguration.DispatcherServletConfiguration</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="ex">DispatcherServletAutoConfiguration.DispatcherServletRegistrationConfiguration</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="ex">EmbeddedWebServerFactoryCustomizerAutoConfiguration</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="ex">EmbeddedWebServerFactoryCustomizerAutoConfiguration.TomcatWebServerFactoryCustomizerConfiguration</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="ex">ErrorMvcAutoConfiguration</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="ex">ErrorMvcAutoConfiguration.WhitelabelErrorViewConfiguration</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="ex">GenericCacheConfiguration</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="ex">HttpEncodingAutoConfiguration</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="ex">HttpMessageConvertersAutoConfiguration</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a><span class="ex">HttpMessageConvertersAutoConfiguration.StringHttpMessageConverterConfiguration</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a><span class="ex">JacksonAutoConfiguration</span></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a><span class="ex">JacksonAutoConfiguration.Jackson2ObjectMapperBuilderCustomizerConfiguration</span></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a><span class="ex">JacksonAutoConfiguration.JacksonObjectMapperBuilderConfiguration</span></span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a><span class="ex">JacksonAutoConfiguration.JacksonObjectMapperConfiguration</span></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a><span class="ex">JacksonAutoConfiguration.ParameterNamesModuleConfiguration</span></span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a><span class="ex">JacksonHttpMessageConvertersConfiguration.MappingJackson2HttpMessageConverterConfiguration</span></span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a><span class="ex">MultipartAutoConfiguration</span></span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a><span class="ex">NoOpCacheConfiguration</span></span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a><span class="ex">RestTemplateAutoConfiguration</span></span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a><span class="ex">ServletWebServerFactoryAutoConfiguration</span></span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a><span class="ex">ServletWebServerFactoryConfiguration.EmbeddedTomcat</span></span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a><span class="ex">SimpleCacheConfiguration</span></span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a><span class="ex">TaskExecutionAutoConfiguration</span></span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a><span class="ex">TaskSchedulingAutoConfiguration</span></span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a><span class="ex">WebMvcAutoConfiguration</span></span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a><span class="ex">WebSocketServletAutoConfiguration</span></span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a><span class="ex">WebSocketServletAutoConfiguration.TomcatWebSocketConfiguration</span></span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.context.ConfigurationPropertiesAutoConfiguration</span></span>
+<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.context.LifecycleAutoConfiguration</span></span>
+<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration</span></span>
+<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.availability.ApplicationAvailabilityAutoConfiguration</span></span>
+<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.info.ProjectInfoAutoConfiguration</span></span></code></pre></div>
+<p>有不少非必须的生效了，进行一定的 exclude 后生效下方配置。</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">DispatcherServletAutoConfiguration</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="ex">DispatcherServletAutoConfiguration.DispatcherServletConfiguration</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="ex">DispatcherServletAutoConfiguration.DispatcherServletRegistrationConfiguration</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="ex">EmbeddedWebServerFactoryCustomizerAutoConfiguration</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="ex">EmbeddedWebServerFactoryCustomizerAutoConfiguration.TomcatWebServerFactoryCustomizerConfiguration</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="ex">GenericCacheConfiguration</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="ex">HttpEncodingAutoConfiguration</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="ex">HttpMessageConvertersAutoConfiguration</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="ex">HttpMessageConvertersAutoConfiguration.StringHttpMessageConverterConfiguration</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="ex">JacksonAutoConfiguration</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="ex">JacksonAutoConfiguration.Jackson2ObjectMapperBuilderCustomizerConfiguration</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a><span class="ex">JacksonAutoConfiguration.JacksonObjectMapperBuilderConfiguration</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a><span class="ex">JacksonAutoConfiguration.JacksonObjectMapperConfiguration</span></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a><span class="ex">JacksonAutoConfiguration.ParameterNamesModuleConfiguration</span></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a><span class="ex">JacksonHttpMessageConvertersConfiguration.MappingJackson2HttpMessageConverterConfiguration</span></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a><span class="ex">NoOpCacheConfiguration</span></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a><span class="ex">ServletWebServerFactoryAutoConfiguration</span></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a><span class="ex">ServletWebServerFactoryConfiguration.EmbeddedTomcat</span></span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a><span class="ex">SimpleCacheConfiguration</span></span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a><span class="ex">WebMvcAutoConfiguration</span></span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.context.LifecycleAutoConfiguration</span></span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a><span class="ex">org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration</span></span></code></pre></div>
+<h3 id="servletwebserverfactoryautoconfiguration-与-servletwebserverfactoryconfiguration.embeddedtomcat">ServletWebServerFactoryAutoConfiguration 与 ServletWebServerFactoryConfiguration.EmbeddedTomcat</h3>
+<p>…</p>
+<h3 id="embeddedwebserverfactorycustomizerautoconfiguration">EmbeddedWebServerFactoryCustomizerAutoConfiguration</h3>
+<p>…</p>
+<h3 id="dispatcherservletautoconfiguration">DispatcherServletAutoConfiguration</h3>
+<p>…</p>
+<h3 id="webmvcautoconfiguration">WebMvcAutoConfiguration</h3>
+<p>…</p>
+<h3 id="jacksonautoconfiguration">JacksonAutoConfiguration</h3>
+<p>…</p>
+<h1 id="spring-中的扩展点">Spring 中的扩展点</h1>
+<ul>
+<li>BeanFactoryPostProcessor</li>
+<li>BeanPostProcessor</li>
+<li>XxAware</li>
+<li>EventListener</li>
+</ul>
+<h2 id="扩展点的调用时序">扩展点的调用时序</h2>
+<h2 id="spring-内部的应用">Spring 内部的应用</h2>
+<h2 id="其他框架的应用">其他框架的应用</h2>
+<h1 id="springboot-中的扩展点">SpringBoot 中的扩展点</h1>
+<p>…</p>
+<h2 id="conditional-注解"><span class="citation" data-cites="Conditional">@Conditional</span> 注解</h2>
+<p>在 Spring 4.0 引入进来的，SpringBoot 的核心就是依赖这个注解和相关的支持。</p>
+<h1 id="spring-注解">Spring 注解</h1>
+<ul>
+<li><span class="citation" data-cites="Bean">@Bean</span></li>
+<li><span class="citation" data-cites="Configuration">@Configuration</span></li>
+<li><span class="citation" data-cites="ComponentScan">@ComponentScan</span></li>
+<li><span class="citation" data-cites="Value">@Value</span></li>
+<li><span class="citation" data-cites="Resource">@Resource</span></li>
+<li><span class="citation" data-cites="Autowired">@Autowired</span></li>
+<li><span class="citation" data-cites="Qualifier">@Qualifier</span></li>
+<li><span class="citation" data-cites="Profile">@Profile</span></li>
+<li><span class="citation" data-cites="SpringBootApplication">@SpringBootApplication</span></li>
+<li><span class="citation" data-cites="Import">@Import</span></li>
+<li><span class="citation" data-cites="Controller">@Controller</span></li>
+<li><span class="citation" data-cites="Service">@Service</span></li>
+<li><span class="citation" data-cites="Repository">@Repository</span></li>
+</ul>
+<h2 id="bean"><span class="citation" data-cites="Bean">@Bean</span></h2>
+<h3 id="用法">用法</h3>
+<h3 id="作用">作用</h3>
+<h3 id="源码分析">源码分析</h3>
+<h3 id="相关注解">相关注解</h3>
+<h2 id="configuration"><span class="citation" data-cites="Configuration">@Configuration</span></h2>
+<h3 id="用法-1">用法</h3>
+<h3 id="作用-1">作用</h3>
+<h3 id="源码分析-1">源码分析</h3>
+<h3 id="相关注解-1">相关注解</h3>
+</div>
+</div>
+</div>
+</main>
+
+<div class="wrapper">
+<div id="disqus_thread"></div>
+<script>
+
+/**
+*  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+*  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
+var disqus_config = function () {
+this.page.url = "https://www.guxingke.com//wiki/spring-framework.html";  // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = ""; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+s.src = 'https://guxingke.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+
+
+<footer class="site-footer">
+<div class="wrapper">
+<div class="footer-col-wrapper">
+<div class="footer-col footer-col-1">
+
+<a href="/page/about.html">
+<span class="icon icon--me">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+<path d="M20 21.193l-.003.807h-19.993l-.004-.833c-.009-2.224.088-3.495 2.647-4.086 2.805-.647 5.573-1.227 4.242-3.682-3.943-7.275-1.123-11.399 3.111-11.399 4.153 0 7.043 3.971 3.11 11.398-1.292 2.44 1.375 3.02 4.242 3.682 2.57.594 2.657 1.873 2.648 4.113zm4-17.193h-7v2h7v-2zm0 4h-7v2h7v-2zm0 4h-7v2h7v-2z"></path>
+</svg>
+</span>
+</a>
+
+<a href="/page/projects.html">
+<span class="icon icon--project">
+<svg t="1563598923914" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="1567" width="24" height="24"><path d="M775 536.2 456.8 536.2c-26 0-47-21-47-47 0-26 21-47 47-47l318.2 0c26 0 47 21 47 47C822 515.2 800.8 536.2 775 536.2L775 536.2z" p-id="1568"></path><path d="M775 722.2 456.8 722.2c-26 0-47-21-47-47s21-47 47-47l318.2 0c26 0 47 21 47 47S800.8 722.2 775 722.2L775 722.2z" p-id="1569"></path><path d="M991 875.8 991 281.4c0-72.2-65.8-65.4-65.8-65.4s-392.8 0.4-371.8 0c-22.4 0.4-33.8-11.8-33.8-11.8s-15.6-27-43.8-69.4c-29.4-44.6-63.6-37.4-63.6-37.4L123 97.4C42.8 97.4 42 174.6 42 174.6L42 872c0 86 65 75.4 65 75.4l824.2 0C1000.8 947.4 991 875.8 991 875.8L991 875.8zM932 840.6c0 26.6-21.4 48-48 48L149 888.6c-26.6 0-48-21.4-48-48L101 343c0-26.6 21.4-48 48-48L884 295c26.6 0 48 21.4 48 48L932 840.6 932 840.6z" p-id="1570"></path><path d="M282.2 489.2m-50.2 0a25.1 25.1 0 1 0 100.4 0 25.1 25.1 0 1 0-100.4 0Z" p-id="1571"></path><path d="M282.2 675.2m-50.2 0a25.1 25.1 0 1 0 100.4 0 25.1 25.1 0 1 0-100.4 0Z" p-id="1572"></path></svg>
+</span>
+</a>
+
+<a href="https://github.com/guxingke">
+<span class="icon icon--github">
+<svg viewBox="0 0 16 16">
+<path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"></path>
+</svg>
+</span>
+</a>
+
+<a href="https://twitter.com/guxingke">
+<span class="icon icon--twitter">
+<svg viewBox="0 0 16 16">
+<path fill="#828282" d="M15.969,3.058c-0.586,0.26-1.217,0.436-1.878,0.515c0.675-0.405,1.194-1.045,1.438-1.809c-0.632,0.375-1.332,0.647-2.076,0.793c-0.596-0.636-1.446-1.033-2.387-1.033c-1.806,0-3.27,1.464-3.27,3.27 c0,0.256,0.029,0.506,0.085,0.745C5.163,5.404,2.753,4.102,1.14,2.124C0.859,2.607,0.698,3.168,0.698,3.767 c0,1.134,0.577,2.135,1.455,2.722C1.616,6.472,1.112,6.325,0.671,6.08c0,0.014,0,0.027,0,0.041c0,1.584,1.127,2.906,2.623,3.206 C3.02,9.402,2.731,9.442,2.433,9.442c-0.211,0-0.416-0.021-0.615-0.059c0.416,1.299,1.624,2.245,3.055,2.271 c-1.119,0.877-2.529,1.4-4.061,1.4c-0.264,0-0.524-0.015-0.78-0.046c1.447,0.928,3.166,1.469,5.013,1.469 c6.015,0,9.304-4.983,9.304-9.304c0-0.142-0.003-0.283-0.009-0.423C14.976,4.29,15.531,3.714,15.969,3.058z"></path>
+</svg>
+</span>
+</a>
+
+<a href="/page/links.html">
+<span class="icon icon--links">
+<svg t="1597890241324" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2110" width="24" height="24"><path d="M262.4 1017.6c-64 0-128-25.6-179.2-76.8-102.4-102.4-102.4-262.4 0-364.8l134.4-134.4 89.6 89.6-134.4 134.4c-51.2 51.2-51.2 128 0 179.2 51.2 51.2 128 51.2 179.2 0l179.2-179.2c25.6-25.6 38.4-57.6 38.4-89.6S556.8 512 537.6 486.4L467.2 422.4l89.6-89.6 70.4 70.4C672 448 697.6 512 697.6 582.4c0 70.4-25.6 134.4-76.8 179.2l-179.2 179.2C396.8 992 326.4 1017.6 262.4 1017.6zM467.2 691.2 396.8 627.2c-102.4-102.4-102.4-262.4 0-364.8l179.2-179.2c102.4-102.4 262.4-102.4 364.8 0 102.4 102.4 102.4 262.4 0 364.8l-134.4 134.4-89.6-89.6 134.4-134.4c51.2-51.2 51.2-128 0-179.2-51.2-51.2-134.4-51.2-179.2 0L486.4 352c-51.2 51.2-51.2 128 0 179.2l70.4 70.4L467.2 691.2z" p-id="2111"></path></svg>
+</svg>
+</span>
+</a>
+
+</div>
+</div>
+</div>
+</footer>
+</body>
+</html>
