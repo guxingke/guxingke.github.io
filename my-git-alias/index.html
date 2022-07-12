@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta content="IE=edge" http-equiv="X-UA-Compatible"/>
+        <meta content="text/html; charset=utf-8" http-equiv="content-type"/>
+        <meta content="width=device-width, initial-scale=1" name="viewport"/>
+
+        
+        <meta name="robots" content="index,follow">
+        <meta name="googlebot" content="index,follow">
+
+        <meta name="google" content="nositelinkssearchbox">
+        <meta name="google" content="notranslate">
+        
+
+        
+
+
+
+        
+        <link href="https://www.guxingke.com/style.css" rel="stylesheet"/>
+        
+        <title>
+    自用 git alias, function - 
+</title>
+    </head>
+    <body>
+        <script>
+            function evaluate_prefers_color() {
+                if(localStorage.getItem('prefers-color') === 'dark') {
+                    document.body.classList.add('dark');
+                } else if(localStorage.getItem('prefers-color') === 'light') {
+                    document.body.classList.remove('dark');
+                } else if(window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    document.body.classList.add('dark');
+                }
+            }
+            evaluate_prefers_color();
+        </script>
+        
+    <main class="article-content">
+        <p><a href="..">..</a>/my-git-alias</p>
+        
+        <h1>自用 git alias, function</h1>
+        <p>Published: <time>2018-08-06</time></p>
+        
+            <div class="chips">
+                
+                    <span class="tag">git</span>
+                
+                    <span class="tag">tools</span>
+                
+                    <span class="tag">alias</span>
+                
+                    <span class="tag">function</span>
+                
+            </div>
+        
+        <hr />
+        <p>自用 git alias,function</p>
+<span id="continue-reading"></span><h2 id="mo-ren">默认</h2>
+<p>使用 oh-my-zsh git plugin . 自带了一些配置. </p>
+<p>查看</p>
+<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#96b5b4;">alias </span><span style="color:#8fa1b3;">| </span><span style="color:#bf616a;">grep git 
+</span></code></pre>
+<h2 id="gong-zuo-liu">工作流</h2>
+<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#b48ead;">function </span><span style="color:#8fa1b3;">gcbf</span><span>() {
+</span><span>    </span><span style="color:#bf616a;">git</span><span> checkout</span><span style="color:#bf616a;"> -b</span><span> feature/$</span><span style="color:#bf616a;">1
+</span><span>}
+</span><span>
+</span><span style="color:#b48ead;">function </span><span style="color:#8fa1b3;">gcbb</span><span>() {
+</span><span>    </span><span style="color:#bf616a;">git</span><span> checkout</span><span style="color:#bf616a;"> -b</span><span> bugfix/$</span><span style="color:#bf616a;">1
+</span><span>}
+</span></code></pre>
+<h2 id="ti-jiao-xin-xi">提交信息</h2>
+<p>参考 <a href="https://gitmoji.carloscuesta.me/">gitmoji</a></p>
+<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#65737e;"># commit with feature emoji
+</span><span style="color:#b48ead;">function </span><span style="color:#8fa1b3;">gcamf</span><span>() {
+</span><span>    </span><span style="color:#bf616a;">git</span><span> commit</span><span style="color:#bf616a;"> -a -m </span><span>&quot;</span><span style="color:#a3be8c;">:sparkles: </span><span>$</span><span style="color:#bf616a;">1</span><span>&quot;
+</span><span>}
+</span><span>
+</span><span style="color:#b48ead;">function </span><span style="color:#8fa1b3;">gcamb</span><span>() {
+</span><span>    </span><span style="color:#bf616a;">git</span><span> commit</span><span style="color:#bf616a;"> -a -m </span><span>&quot;</span><span style="color:#a3be8c;">:bug: </span><span>$</span><span style="color:#bf616a;">1</span><span>&quot;
+</span><span>}
+</span><span>
+</span><span style="color:#b48ead;">function </span><span style="color:#8fa1b3;">gcamd</span><span>() {
+</span><span>    </span><span style="color:#bf616a;">git</span><span> commit</span><span style="color:#bf616a;"> -a -m </span><span>&quot;</span><span style="color:#a3be8c;">:memo: </span><span>$</span><span style="color:#bf616a;">1</span><span>&quot;
+</span><span>}
+</span><span>
+</span><span style="color:#b48ead;">function </span><span style="color:#8fa1b3;">gcamr</span><span>() {
+</span><span>    </span><span style="color:#bf616a;">git</span><span> commit</span><span style="color:#bf616a;"> -a -m </span><span>&quot;</span><span style="color:#a3be8c;">:recycle: </span><span>$</span><span style="color:#bf616a;">1</span><span>&quot;
+</span><span>}
+</span><span>
+</span><span style="color:#b48ead;">function </span><span style="color:#8fa1b3;">gcamc</span><span>() {
+</span><span>    </span><span style="color:#bf616a;">git</span><span> commit</span><span style="color:#bf616a;"> -a -m </span><span>&quot;</span><span style="color:#a3be8c;">:wrench: </span><span>$</span><span style="color:#bf616a;">1</span><span>&quot;
+</span><span>}
+</span></code></pre>
+<h2 id="full">FULL</h2>
+<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span>
+</span><span style="color:#b48ead;">function </span><span style="color:#8fa1b3;">gcbf</span><span>() {
+</span><span>    </span><span style="color:#bf616a;">git</span><span> checkout</span><span style="color:#bf616a;"> -b</span><span> feature/$</span><span style="color:#bf616a;">1
+</span><span>}
+</span><span>
+</span><span style="color:#b48ead;">function </span><span style="color:#8fa1b3;">gcbb</span><span>() {
+</span><span>    </span><span style="color:#bf616a;">git</span><span> checkout</span><span style="color:#bf616a;"> -b</span><span> bugfix/$</span><span style="color:#bf616a;">1
+</span><span>}
+</span><span>
+</span><span style="color:#65737e;"># commit with feature emoji
+</span><span style="color:#b48ead;">function </span><span style="color:#8fa1b3;">gcamf</span><span>() {
+</span><span>    </span><span style="color:#bf616a;">git</span><span> commit</span><span style="color:#bf616a;"> -a -m </span><span>&quot;</span><span style="color:#a3be8c;">:sparkles: </span><span>$</span><span style="color:#bf616a;">1</span><span>&quot;
+</span><span>}
+</span><span>
+</span><span style="color:#b48ead;">function </span><span style="color:#8fa1b3;">gcamb</span><span>() {
+</span><span>    </span><span style="color:#bf616a;">git</span><span> commit</span><span style="color:#bf616a;"> -a -m </span><span>&quot;</span><span style="color:#a3be8c;">:bug: </span><span>$</span><span style="color:#bf616a;">1</span><span>&quot;
+</span><span>}
+</span><span>
+</span><span style="color:#b48ead;">function </span><span style="color:#8fa1b3;">gcamd</span><span>() {
+</span><span>    </span><span style="color:#bf616a;">git</span><span> commit</span><span style="color:#bf616a;"> -a -m </span><span>&quot;</span><span style="color:#a3be8c;">:memo: </span><span>$</span><span style="color:#bf616a;">1</span><span>&quot;
+</span><span>}
+</span><span>
+</span><span style="color:#b48ead;">function </span><span style="color:#8fa1b3;">gcamr</span><span>() {
+</span><span>    </span><span style="color:#bf616a;">git</span><span> commit</span><span style="color:#bf616a;"> -a -m </span><span>&quot;</span><span style="color:#a3be8c;">:recycle: </span><span>$</span><span style="color:#bf616a;">1</span><span>&quot;
+</span><span>}
+</span><span>
+</span><span style="color:#b48ead;">function </span><span style="color:#8fa1b3;">gcamc</span><span>() {
+</span><span>    </span><span style="color:#bf616a;">git</span><span> commit</span><span style="color:#bf616a;"> -a -m </span><span>&quot;</span><span style="color:#a3be8c;">:wrench: </span><span>$</span><span style="color:#bf616a;">1</span><span>&quot;
+</span><span>}
+</span></code></pre>
+
+    </main>
+
+        <footer>
+            <hr text="&copy; Copyright 2022" />
+            
+            <div class="footer-social-media">
+                <a onclick="toggle_prefers_color()">Toggle Theme</a>
+                
+                    <a href="https://github.com/guxingke" target="_blank">GitHub</a>
+                
+                    <a href="https://twitter.com/@guxingke" target="_blank">Twitter</a>
+                
+            </div>
+            
+        </footer>
+    </body>
+
+    
+        <script src="https://www.guxingke.com/js/script.js"/></script>
+    
+</html>

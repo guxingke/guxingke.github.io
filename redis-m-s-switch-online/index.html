@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta content="IE=edge" http-equiv="X-UA-Compatible"/>
+        <meta content="text/html; charset=utf-8" http-equiv="content-type"/>
+        <meta content="width=device-width, initial-scale=1" name="viewport"/>
+
+        
+        <meta name="robots" content="index,follow">
+        <meta name="googlebot" content="index,follow">
+
+        <meta name="google" content="nositelinkssearchbox">
+        <meta name="google" content="notranslate">
+        
+
+        
+
+
+
+        
+        <link href="https://www.guxingke.com/style.css" rel="stylesheet"/>
+        
+        <title>
+    Redis 主从在线切换 - 
+</title>
+    </head>
+    <body>
+        <script>
+            function evaluate_prefers_color() {
+                if(localStorage.getItem('prefers-color') === 'dark') {
+                    document.body.classList.add('dark');
+                } else if(localStorage.getItem('prefers-color') === 'light') {
+                    document.body.classList.remove('dark');
+                } else if(window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    document.body.classList.add('dark');
+                }
+            }
+            evaluate_prefers_color();
+        </script>
+        
+    <main class="article-content">
+        <p><a href="..">..</a>/redis-m-s-switch-online</p>
+        
+        <h1>Redis 主从在线切换</h1>
+        <p>Published: <time>2020-03-05</time></p>
+        
+            <div class="chips">
+                
+                    <span class="tag">redis</span>
+                
+                    <span class="tag">ops</span>
+                
+            </div>
+        
+        <hr />
+        <blockquote>
+<p>精神小伙 在线背锅</p>
+</blockquote>
+<p>Redis 主从在线切换记录</p>
+<h2 id="bei-jing">背景</h2>
+<p>Redis master 所在实例主机需要下线维护. 如何切换主从对线上影响最小. 
+当前架构如下图
+<img src="http://assets.processon.com/chart_image/5e60e76de4b09aaf33f958b8.png" alt="切换前" /></p>
+<h2 id="ji-zhu-fang-an">技术方案</h2>
+<h3 id="fang-an-1">方案1</h3>
+<p>引入 redis sentinel.</p>
+<h4 id="bu-zou">步骤:</h4>
+<ol>
+<li>部署redis sentinel</li>
+<li>修改业务配置, 修改业务代码. </li>
+<li>kill master.</li>
+<li>check</li>
+<li>建立新主从逻辑</li>
+</ol>
+<h4 id="you-dian">优点:</h4>
+<ol>
+<li>切换简单, kill 主库即可, sentinel 可自动提升 slave -&gt; master. </li>
+</ol>
+<h4 id="que-dian">缺点:</h4>
+<ol>
+<li>需要部署 redis sentinel, 新的中间件.</li>
+<li>需要改动业务代码. </li>
+</ol>
+<h3 id="fang-an-2">方案2</h3>
+<p>直接切换</p>
+<h4 id="bu-zou-1">步骤:</h4>
+<ol>
+<li>使从库可写, <code>redis-cli -h redis-slave -p 6379 CONFIG set slave-read-only no</code></li>
+<li>修改业务侧配置, redis 地址指向可写的 slave 实例, 重启业务应用</li>
+<li>确保主从同步完成, 停止主从同步. <code>redis-cli -h redis-slave -p 6379 slaveof no one</code></li>
+<li>建立新主从逻辑. </li>
+</ol>
+<h4 id="you-dian-1">优点:</h4>
+<ol>
+<li>符合直觉</li>
+<li>没有代码改动</li>
+</ol>
+<h4 id="que-dian-1">缺点:</h4>
+<ol>
+<li>如果切换过程中有问题, 需要及时回滚配置和业务项目发布. 耗时较长, 会导致数据丢失.</li>
+</ol>
+<h3 id="fang-an-3">方案3</h3>
+<p>引入4层代理, haproxy </p>
+<h4 id="bu-zou-2">步骤:</h4>
+<ol>
+<li>部署 haproxy, 作为现 master 的代理. </li>
+<li>修改业务侧配置,  redis 地址指向 haproxy 代理地址, 重启业务应用. </li>
+<li>使从库可写</li>
+<li>修改 haproxy 配置, 指向可写的从库, 并 reload 配置.</li>
+<li>确保主从同步完成, 停止主从同步. </li>
+<li>建立新主从逻辑. </li>
+</ol>
+<h4 id="you-dian-2">优点</h4>
+<ol>
+<li>引入中间层haproxy, 因为 haproxy 支持动态reload配置, 并保证优雅关闭之前的连接, 业务侧可无感知 redis 主从切换. </li>
+<li>主从切换时间短</li>
+</ol>
+<h4 id="que-dian-2">缺点</h4>
+<ol>
+<li>引入了新的中间件</li>
+</ol>
+<h2 id="que-ding-fang-an">确定方案</h2>
+<p>稳妥起见, 使用方案3. </p>
+<h2 id="shi-shi">实施</h2>
+<ol>
+<li>
+<p>引入 haproxy 后架构
+<img src="http://assets.processon.com/chart_image/5e60ef73e4b0f858554b126e.png" alt="haproxy" /></p>
+</li>
+<li>
+<p>执行主从切换</p>
+</li>
+</ol>
+<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span>
+</span><span style="color:#b48ead;">export </span><span style="color:#bf616a;">redis-slave</span><span>=</span><span style="color:#a3be8c;">REDIS_SLAVE_IP
+</span><span style="color:#b48ead;">export </span><span style="color:#bf616a;">redis-master</span><span>=</span><span style="color:#a3be8c;">REDIS_MASTER_IP
+</span><span>
+</span><span style="color:#65737e;"># 从库可写
+</span><span style="color:#bf616a;">redis-cli -h</span><span> redis-slave</span><span style="color:#bf616a;"> -p</span><span> 6379 CONFIG set slave-read-only no
+</span><span>
+</span><span style="color:#65737e;"># 修改 haproxy 配置
+</span><span style="color:#bf616a;">sed -i </span><span>&#39;</span><span style="color:#a3be8c;">s/redis-master/redis-slave/g</span><span>&#39; haproxy.cfg
+</span><span>
+</span><span style="color:#65737e;"># reload haproxy
+</span><span style="color:#bf616a;">haproxy -f</span><span> haproxy.cfg</span><span style="color:#bf616a;"> -p</span><span> /tmp/haproxy.pid</span><span style="color:#bf616a;"> -sf </span><span>`</span><span style="color:#bf616a;">cat</span><span> /tmp/haproxy.pid`
+</span><span>
+</span><span style="color:#65737e;"># 确定主从同步结束
+</span><span style="color:#bf616a;">redis-cli -h</span><span> redis-slave</span><span style="color:#bf616a;"> -p</span><span> 6379 info | </span><span style="color:#bf616a;">grep</span><span> master_sync_in_progress
+</span><span style="color:#65737e;"># 值需为0
+</span><span>
+</span><span style="color:#65737e;"># 停止主从同步
+</span><span style="color:#bf616a;">redis-cli -h</span><span> redis-slave</span><span style="color:#bf616a;"> -p</span><span> 6379 slaveof no one
+</span><span>
+</span><span style="color:#65737e;"># 建立新主从
+</span><span style="color:#bf616a;">redis-cli -h</span><span> redis-master</span><span style="color:#bf616a;"> -p</span><span> 6379 slaveof redis-slave 6379
+</span><span>
+</span><span style="color:#65737e;"># 确定新主从同步结束
+</span><span style="color:#bf616a;">redis-cli -h</span><span> redis-master</span><span style="color:#bf616a;"> -p</span><span> 6379 info | </span><span style="color:#bf616a;">grep</span><span> master_sync_in_progress
+</span><span style="color:#65737e;"># 值需为0
+</span><span>
+</span><span style="color:#65737e;"># 结束
+</span></code></pre>
+<ol start="3">
+<li>切换后架构
+<img src="http://assets.processon.com/chart_image/5e60f24ae4b08601cf4bd769.png" alt="end" /></li>
+</ol>
+<h2 id="xiao-jie">小结</h2>
+<p>简单记录了 Redis 主从切换的取舍和操作. </p>
+
+    </main>
+
+        <footer>
+            <hr text="&copy; Copyright 2022" />
+            
+            <div class="footer-social-media">
+                <a onclick="toggle_prefers_color()">Toggle Theme</a>
+                
+                    <a href="https://github.com/guxingke" target="_blank">GitHub</a>
+                
+                    <a href="https://twitter.com/@guxingke" target="_blank">Twitter</a>
+                
+            </div>
+            
+        </footer>
+    </body>
+
+    
+        <script src="https://www.guxingke.com/js/script.js"/></script>
+    
+</html>

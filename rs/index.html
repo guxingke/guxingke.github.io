@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta content="IE=edge" http-equiv="X-UA-Compatible"/>
+        <meta content="text/html; charset=utf-8" http-equiv="content-type"/>
+        <meta content="width=device-width, initial-scale=1" name="viewport"/>
+
+        
+        <meta name="robots" content="index,follow">
+        <meta name="googlebot" content="index,follow">
+
+        <meta name="google" content="nositelinkssearchbox">
+        <meta name="google" content="notranslate">
+        
+
+        
+
+
+
+        
+        <link href="https://www.guxingke.com/style.css" rel="stylesheet"/>
+        
+        <title>
+    用户关系系统设计方案 - 
+</title>
+    </head>
+    <body>
+        <script>
+            function evaluate_prefers_color() {
+                if(localStorage.getItem('prefers-color') === 'dark') {
+                    document.body.classList.add('dark');
+                } else if(localStorage.getItem('prefers-color') === 'light') {
+                    document.body.classList.remove('dark');
+                } else if(window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    document.body.classList.add('dark');
+                }
+            }
+            evaluate_prefers_color();
+        </script>
+        
+    <main class="article-content">
+        <p><a href="..">..</a>/rs</p>
+        
+        <h1>用户关系系统设计方案</h1>
+        <p>Published: <time>2022-06-22</time></p>
+        
+            <div class="chips">
+                
+                    <span class="tag">design</span>
+                
+            </div>
+        
+        <hr />
+        <h1 id="yong-hu-guan-xi-xi-tong-she-ji-fang-an">用户关系系统设计方案</h1>
+<p>用户间存在关注，被关注，好友(互相关注)三种关系。</p>
+<h2 id="bei-jing-shuo-ming">背景说明</h2>
+<h3 id="ming-ci-jie-shi">名词解释</h3>
+<ul>
+<li>关注列表：指定用户关注的用户的列表</li>
+<li>粉丝列表：关注指定用户的用户的列表</li>
+<li>好友列表：与指定用户互相关注的用户的列表</li>
+<li>用户关系状态：关注，被关注，好友，无关系。</li>
+</ul>
+<h3 id="guan-lian-shu-ju">关联数据</h3>
+<ol>
+<li>有关注行为的用户占比 40%, 这些用户平均关注 7.9 个用户。</li>
+<li>被关注的用户占比约 35%，这些用户平均拥有 9.2 个粉丝。</li>
+<li>既有关注行为也有粉丝的用户约 26%，这些用户平均关注 8.3 个用户，平均拥有 10.4 个粉丝。</li>
+</ol>
+<h3 id="guan-xi-mei-ju-biao">关系枚举表</h3>
+<p>下文以 <code>-&gt;</code> 表示关注，<code>&lt;-</code> 表示被关注, <code>&lt;-&gt;</code> 表示互相关注，<code>--</code> 表示无关系</p>
+<table><thead><tr><th></th><th>A B</th><th>B A</th></tr></thead><tbody>
+<tr><td>A -- B</td><td>--</td><td>--</td></tr>
+<tr><td>A -&gt; B</td><td>-&gt;</td><td>&lt;-</td></tr>
+<tr><td>B -&gt; A</td><td>&lt;-</td><td>-&gt;</td></tr>
+<tr><td>A -&gt; B, B -&gt; A</td><td>&lt;-&gt;</td><td>&lt;-&gt;</td></tr>
+</tbody></table>
+<h2 id="ye-wu-chang-jing">业务场景</h2>
+<ol>
+<li>关注，用户 A 关注用户 B。</li>
+<li>取关，用户 A 取消关注 用户 B。</li>
+<li>获取用户 A 的关注列表，并获取用户 C 与该关注列表的关系状态。</li>
+<li>获取用户 A 的粉丝列表，并获取用户 C 与该粉丝列表的关系状态。</li>
+<li>获取用户 A 的好友列表。</li>
+</ol>
+<h2 id="ye-wu-yue-shu">业务约束</h2>
+<ul>
+<li>用户关注上限 1000，即用户最多关注 1000 个其他用户。</li>
+</ul>
+<h2 id="ji-zhu-fang-an">技术方案</h2>
+<p>基于不同的用户量级设计相关的方案, 百万级，千万级，亿级，十亿级。
+方案里涉及数据删除均为逻辑删除。</p>
+<h3 id="dan-biao-fang-an">单表方案</h3>
+<p>关注产生正反两条记录, 数据量为关注行为的两倍。</p>
+<h4 id="shu-ju-biao-she-ji">数据表设计</h4>
+<p>关注表 followers</p>
+<ul>
+<li>id, 数据 ID， 无意义</li>
+<li>subject 主语 uid</li>
+<li>object 宾语 uid</li>
+<li>ts 记录发生或修改时间</li>
+<li>status 状态，0 无, 1 被关注，2 关注，3 好友</li>
+</ul>
+<table><thead><tr><th>id</th><th>subject</th><th>object</th><th>ts</th><th>status</th></tr></thead><tbody>
+<tr><td>1</td><td>10</td><td>20</td><td>1655884150592</td><td>2</td></tr>
+<tr><td>1</td><td>20</td><td>10</td><td>1655884150592</td><td>1</td></tr>
+<tr><td>2</td><td>10</td><td>30</td><td>1655884250592</td><td>3</td></tr>
+<tr><td>3</td><td>30</td><td>10</td><td>1655884350592</td><td>3</td></tr>
+</tbody></table>
+<p>索引</p>
+<ul>
+<li>unique index so(subject , object)</li>
+<li>index subject_ts (subject, ts desc)</li>
+</ul>
+<h4 id="ye-wu-cao-zuo">业务操作</h4>
+<ul>
+<li>关注操作，用户 a 关注 用户 b</li>
+</ul>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>// 查询当前用户关系
+</span><span>rs = `followers where subject = a and object = b limit </span><span style="color:#d08770;">1</span><span>;
+</span><span style="color:#b48ead;">if </span><span>rs { 
+</span><span>  </span><span style="color:#b48ead;">if </span><span>rs.status is </span><span style="color:#d08770;">1 </span><span>{ // 被关注，需要变成好友
+</span><span>    `update followers status = </span><span style="color:#d08770;">3 </span><span>where subject = a and object = b`
+</span><span>    `update followers status = </span><span style="color:#d08770;">3 </span><span>where subject = b and object = a`
+</span><span>  }
+</span><span>} </span><span style="color:#b48ead;">else </span><span>{
+</span><span>  `insert </span><span style="color:#bf616a;">followers</span><span>(a b </span><span style="color:#d08770;">2</span><span>)`
+</span><span>  `insbrt </span><span style="color:#bf616a;">followers</span><span>(b a </span><span style="color:#d08770;">1</span><span>)`
+</span><span>}
+</span><span>
+</span></code></pre>
+<ul>
+<li>取关操作，用户 a 取关用户 b</li>
+</ul>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>// 查询用户 a b 关系
+</span><span>rs = `followers where subject = a and object = b limit`;
+</span><span>
+</span><span style="color:#b48ead;">if </span><span>follower.status is </span><span style="color:#d08770;">3 </span><span>{ // 好友关系
+</span><span>  `</span><span style="background-color:#bf616a;color:#2b303b;">del</span><span> follower`
+</span><span>  `update status = </span><span style="color:#d08770;">2 </span><span>where subject = follower.object and object = follower.subject`
+</span><span style="background-color:#bf616a;color:#2b303b;">}</span><span> </span><span style="color:#b48ead;">else if </span><span>follwer.status is </span><span style="color:#d08770;">2 </span><span>{
+</span><span>  `</span><span style="background-color:#bf616a;color:#2b303b;">del</span><span> follower`
+</span><span>  `</span><span style="color:#b48ead;">del </span><span>where subject = follower.object and object =  follower.subject`
+</span><span style="background-color:#bf616a;color:#2b303b;">}</span><span>
+</span></code></pre>
+<ul>
+<li>查询关注列表</li>
+</ul>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>// 关注存在上限，翻页可以用 offset limit 方式。
+</span><span>where subject = a and status &gt;= </span><span style="color:#d08770;">2 </span><span>order by ts desc offset x limit y
+</span></code></pre>
+<ul>
+<li>查询粉丝列表</li>
+</ul>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>// 粉丝列表翻页需要采用 search after 机制
+</span><span>where subject = a and status = </span><span style="color:#d08770;">1 </span><span>and ts &lt; ? order by ts desc limit y
+</span><span>
+</span><span>// where subject = a and status = </span><span style="color:#d08770;">1 </span><span>and ts &lt; ? and </span><span style="color:#96b5b4;">id </span><span>&lt; ? order y ts desc, </span><span style="color:#96b5b4;">id </span><span>desc limit y 
+</span></code></pre>
+<ul>
+<li>查询好友列表</li>
+</ul>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>// 好友存在上限，翻页可以用 offset limit 方式。
+</span><span>where subject = a and status = </span><span style="color:#d08770;">3 </span><span>order by ts desc offset x limit y
+</span></code></pre>
+<ul>
+<li>查询用户关系</li>
+</ul>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>where subject = a and object in (b,c,d)
+</span></code></pre>
+<h4 id="bu-chong-shuo-ming">补充说明</h4>
+<p>方案适用于百万用户量级，也就是最终单表数据量在 <strong>2000 万</strong> 以下，如果数据库配置够高，最终数据量在 <strong>2亿</strong> 左右也适用。</p>
+<h3 id="shuang-biao-fang-an">双表方案</h3>
+<p>采用关注表（事实表）与好友表（维度表）组合。
+关注行为在关注表产生一条数据，根据情况决定好友表是否要产生数据。</p>
+<p>a b 为好友的情况下，好友表维护一条记录</p>
+<h4 id="shu-ju-biao-she-ji-1">数据表设计</h4>
+<p>关注表, followers</p>
+<ul>
+<li>id 数据标志，无意义</li>
+<li>subject 主语</li>
+<li>object 宾语</li>
+<li>ts 关注时间</li>
+</ul>
+<table><thead><tr><th>id</th><th>subject</th><th>object</th><th>ts</th></tr></thead><tbody>
+<tr><td>1</td><td>10</td><td>20</td><td>1655884150592</td></tr>
+<tr><td>1</td><td>20</td><td>10</td><td>1655884150592</td></tr>
+<tr><td>1</td><td>30</td><td>40</td><td>1655884150592</td></tr>
+</tbody></table>
+<p>索引</p>
+<ul>
+<li>unique index (subject,object)</li>
+<li>index subject_ts(subject, ts desc)</li>
+<li>index object_ts(object, ts desc)</li>
+</ul>
+<p>好友表</p>
+<ul>
+<li>id 数据标志，无意义</li>
+<li>subject 主语</li>
+<li>object 宾语</li>
+<li>ts 时间</li>
+</ul>
+<table><thead><tr><th>id</th><th>subject</th><th>object</th><th>ts</th></tr></thead><tbody>
+<tr><td>1</td><td>10</td><td>20</td><td>1655884150592</td></tr>
+</tbody></table>
+<p>索引</p>
+<ul>
+<li>index (ts desc, subject, object)</li>
+</ul>
+<h4 id="ye-wu-cao-zuo-1">业务操作</h4>
+<ul>
+<li>关注, A 关注 B</li>
+</ul>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>
+</span><span>fans = `where subject = b and object a`
+</span><span style="color:#b48ead;">if </span><span>not fans { // b 未关注 a
+</span><span>  `insert </span><span style="color:#bf616a;">followers</span><span>(a b)`
+</span><span>} </span><span style="color:#b48ead;">else </span><span>{
+</span><span>   </span><span style="color:#96b5b4;">min</span><span> = </span><span style="color:#96b5b4;">min</span><span>(a, b)
+</span><span>   </span><span style="color:#96b5b4;">max</span><span> = </span><span style="color:#96b5b4;">max</span><span>(a, b)
+</span><span>  `insert </span><span style="color:#bf616a;">friends</span><span>(</span><span style="color:#96b5b4;">min</span><span>, </span><span style="color:#96b5b4;">max</span><span>)` // 保证 subject &lt; object, 可保证维护好友关系只需要一条记录
+</span><span>}
+</span><span>
+</span></code></pre>
+<ul>
+<li>取关，A 取关 B</li>
+</ul>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span style="color:#96b5b4;">min </span><span>= </span><span style="color:#96b5b4;">min</span><span>(a, b)
+</span><span style="color:#96b5b4;">max </span><span>= </span><span style="color:#96b5b4;">max</span><span>(a, b)
+</span><span>friend = `where subject = </span><span style="color:#96b5b4;">min </span><span>and object = </span><span style="color:#96b5b4;">max</span><span>`;
+</span><span>
+</span><span style="color:#b48ead;">if </span><span>friend {
+</span><span>  `</span><span style="background-color:#bf616a;color:#2b303b;">del</span><span> friend`;
+</span><span>  `</span><span style="color:#b48ead;">del </span><span>followers where subject = a and object = b`;
+</span><span style="background-color:#bf616a;color:#2b303b;">}</span><span> </span><span style="color:#b48ead;">else </span><span>{
+</span><span>  `</span><span style="background-color:#bf616a;color:#2b303b;">del</span><span> followers where subject = a and object = b`;
+</span><span style="background-color:#bf616a;color:#2b303b;">}</span><span>
+</span><span>
+</span></code></pre>
+<ul>
+<li>关注列表</li>
+</ul>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>followers where subject = a order by ts desc offset x limit y;
+</span></code></pre>
+<ul>
+<li>粉丝列表</li>
+</ul>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>followers where object = a and ts &lt; ? order by ts desc limit y;
+</span></code></pre>
+<ul>
+<li>好友列表</li>
+</ul>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>friends where ts &lt; ? and (subject  = a or object = a) order ts desc limit y;
+</span></code></pre>
+<ul>
+<li>用户关系</li>
+</ul>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>rs = followrs </span><span style="color:#bf616a;">where </span><span>(</span><span style="color:#bf616a;">subject </span><span>= a and object in (b,c,d)) or (subject in (b,c,d) and object = a)
+</span><span>
+</span><span>// 业务侧 merge
+</span></code></pre>
+<h4 id="bu-chong-shuo-ming-1">补充说明</h4>
+<p>此方案与单表方案的适用数据量类似。
+好友表的设计可以采取好友关系产生两条记录的方式实现，查询好友列表的性能稍优。</p>
+<h3 id="guan-zhu-biao-fen-biao-fang-an">关注表分表方案</h3>
+<p>当用户量进一步增加，单表预期数据量超过阈值时，需要考虑分表的方案。</p>
+<p>分表指导原则</p>
+<ul>
+<li>避免跨表查询</li>
+<li>避免跨库(表）事务</li>
+</ul>
+<p>关注表分表，分表规则按照 subject hash 即可，由于用户存在关注上限，按 subject uid hash 分表之后数据分布是比较均匀的。
+由于关注表按 subject uid 分表了，查询用户的粉丝列表就不能通过关注表来查询了，需要引入新的粉丝表。粉丝表按照 subject uid 分表即可，粉丝表与关注表的不同之处在于，一个用户的粉丝是没有上线的，需要考虑部分粉丝量特别大的用户导致的数据倾斜问题，可以考虑针对这类特殊的用户维护单独的粉丝表。</p>
+<p>关注表 followers</p>
+<p>一次关注产生一条关注记录</p>
+<ul>
+<li>id 数据标志，无意义</li>
+<li>subject 主语</li>
+<li>object 宾语</li>
+<li>ts 关注时间</li>
+<li>status 0 无， 2 关注，3 好友</li>
+</ul>
+<table><thead><tr><th>id</th><th>subject</th><th>object</th><th>ts</th><th>status</th></tr></thead><tbody>
+<tr><td>1</td><td>10</td><td>20</td><td>1655884150592</td><td>2</td></tr>
+<tr><td>2</td><td>100</td><td>200</td><td>1655884150592</td><td>2</td></tr>
+</tbody></table>
+<p>索引</p>
+<ul>
+<li>unique index so(subject, object)</li>
+<li>index s_ts(subject, ts desc)</li>
+</ul>
+<p>粉丝表 fans</p>
+<ul>
+<li>id 数据标志，无意义</li>
+<li>subject 主语</li>
+<li>object 宾语</li>
+<li>ts 关注时间</li>
+</ul>
+<table><thead><tr><th>id</th><th>subject</th><th>object</th><th>ts</th></tr></thead><tbody>
+<tr><td>1</td><td>20</td><td>10</td><td>1655884150592</td></tr>
+<tr><td>2</td><td>200</td><td>100</td><td>1655884150592</td></tr>
+</tbody></table>
+<p>粉丝表是基于关注表的维度表，数据一致性细节此处不展开。</p>
+<h4 id="ye-wu-cao-zuo-2">业务操作</h4>
+<ul>
+<li>关注</li>
+</ul>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>fans = `followers where subject = b and object = a limit </span><span style="color:#d08770;">1</span><span>;
+</span><span style="color:#b48ead;">if </span><span>not fans { // 未被关注
+</span><span>   `insert </span><span style="color:#bf616a;">followers</span><span>(a, b, </span><span style="color:#d08770;">2</span><span>)`
+</span><span>
+</span><span>   `insert </span><span style="color:#bf616a;">fans</span><span>(b, a)`; // 非事务，需要考虑一致性问题
+</span><span>} </span><span style="color:#b48ead;">else </span><span>{ // 已关注，需要成为好友
+</span><span>    `insert </span><span style="color:#bf616a;">followers</span><span>(a, b, </span><span style="color:#d08770;">3</span><span>)`;
+</span><span>
+</span><span>    `insert </span><span style="color:#bf616a;">fans</span><span>(b, a)`; // 非事务，需要考虑一致性问题
+</span><span>
+</span><span>    `update fans set staus = </span><span style="color:#d08770;">3 </span><span>where subject = b and object = a; // 非事务，需要考虑一致性问题
+</span><span>}
+</span></code></pre>
+<ul>
+<li>取关</li>
+</ul>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>follower = `follows where subject = a and object = b limit </span><span style="color:#d08770;">1</span><span>`;
+</span><span>
+</span><span style="color:#b48ead;">if </span><span>follower.status is </span><span style="color:#d08770;">2 </span><span>{ // 关注
+</span><span>  `</span><span style="background-color:#bf616a;color:#2b303b;">del</span><span> follower` ; 
+</span><span>
+</span><span>  `</span><span style="color:#b48ead;">del </span><span>fans where subject = follower.object and object = follower.subject` ; // 非事务，需要考虑一致性问题
+</span><span style="background-color:#bf616a;color:#2b303b;">}</span><span> </span><span style="color:#b48ead;">else if </span><span>follower.status is </span><span style="color:#d08770;">3 </span><span>{ // 好友
+</span><span>  `</span><span style="background-color:#bf616a;color:#2b303b;">del</span><span> follower` ;
+</span><span>
+</span><span>  `</span><span style="color:#b48ead;">del </span><span>fans where subject = follower.object and object = follower.subject` ; // 非事务，需要考虑一致性问题
+</span><span>
+</span><span>  `update followers set status = </span><span style="color:#d08770;">2 </span><span>where subject = b and object = a` ; // 非事务，需要考虑一致性问题
+</span><span style="background-color:#bf616a;color:#2b303b;">}</span><span>
+</span><span>
+</span></code></pre>
+<ul>
+<li>关注列表</li>
+</ul>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>followers where subject = a order by ts desc offset x limit y;
+</span></code></pre>
+<ul>
+<li>粉丝列表</li>
+</ul>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>fans where subject = a and ts &lt; ? order by ts desc limit y;
+</span></code></pre>
+<ul>
+<li>好友列表</li>
+</ul>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>followers where subject = a and status = </span><span style="color:#d08770;">3 </span><span>order by ts desc offset x limit y;
+</span></code></pre>
+<ul>
+<li>用户关系</li>
+</ul>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>followers where subject = a  and object in (b, c, d);
+</span><span>fans where subject = a  and object in (b, c, d);
+</span><span>
+</span><span>// 业务侧合并
+</span></code></pre>
+<h4 id="bu-chong-shuo-ming-2">补充说明</h4>
+<p>方案适用于千万用户量级，关注数据量级10亿左右的社区业务系统。</p>
+<p>用户关系系统在社区业务中，读写都不高，百万日活的情况下，读 qps 不会超过三位数， 写就更少了。</p>
+<p>方案涉及到分表，因此业务修改部分存在跨库事务的可能，此处建议追求最终一致性，业务侧双写，异步补偿。</p>
+<ul>
+<li>基于 followers binlog 异步补偿</li>
+<li>业务侧生产消息，消费者异步补偿</li>
+<li>增量轮询 followers 表，异步补偿。</li>
+<li>分布式事务，不推荐。</li>
+</ul>
+<h3 id="fang-an-zhi-wai">方案之外</h3>
+<h4 id="ji-yu-redis-sorted-set-de-fang-an">基于 <code>Redis Sorted Set</code> 的方案</h4>
+<p>有部分采用 <code>Redis</code> 实现用户关系的方案，此方案在用户量少时比基于数据库的成本高，在用户量大时不可用，完全不建议使用完全基于 <code>Redis</code> 的方案。</p>
+<p><code>Redis</code> 在关系业务中的可用场景，大 V 的粉丝列表和关注列表的前 N 页的缓存。</p>
+<h2 id="wen-ti">问题</h2>
+<h3 id="shu-ju-qing-xie-da-v-wen-ti-bu-fen-yong-hu-ke-neng-you-te-bie-duo-de-fen-si">数据倾斜，大 V 问题，部分用户可能有特别多的粉丝</h3>
+<p>针对部分用户维护单独的路由信息，写入和查询粉丝表时提前查询路由，根据路由操作相应的数据。</p>
+<p>routes</p>
+<ul>
+<li>id 用户ID</li>
+<li>table 数据表</li>
+<li>ts 加入新表时的时间</li>
+</ul>
+<table><thead><tr><th>id</th><th>table</th><th>ts</th></tr></thead><tbody>
+<tr><td>1</td><td>rsdb.t123</td><td>1655884150592</td></tr>
+</tbody></table>
+<ul>
+<li>写，根据记录的 ts 判定去公用表还是特例表</li>
+<li>读，ts 是必传参数，默认是当前时间，根据 ts 确定当前查询去公用表还是特例表</li>
+</ul>
+<h3 id="ru-guo-yong-hu-guan-xi-zhi-xu-yao-guan-zhu-he-hao-you-bu-kao-lu-bei-guan-zhu-de-chang-jing-shi-xian-shi-fou-hui-jing-jian">如果用户关系，只需要关注和好友，不考虑被关注的场景，实现是否会精简</h3>
+<p>可以少维护一个状态，或者查询关系时少一次查询。</p>
+<h2 id="ref">REf</h2>
+<ul>
+<li><a href="https://juejin.cn/post/6914486387307708429">粉丝关系链，10亿数据，如何设计？</a></li>
+<li><a href="https://zhuanlan.zhihu.com/p/186197535">社交网络海量用户关系（关系链）设计思考</a></li>
+</ul>
+
+    </main>
+
+        <footer>
+            <hr text="&copy; Copyright 2022" />
+            
+            <div class="footer-social-media">
+                <a onclick="toggle_prefers_color()">Toggle Theme</a>
+                
+                    <a href="https://github.com/guxingke" target="_blank">GitHub</a>
+                
+                    <a href="https://twitter.com/@guxingke" target="_blank">Twitter</a>
+                
+            </div>
+            
+        </footer>
+    </body>
+
+    
+        <script src="https://www.guxingke.com/js/script.js"/></script>
+    
+</html>

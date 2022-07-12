@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta content="IE=edge" http-equiv="X-UA-Compatible"/>
+        <meta content="text/html; charset=utf-8" http-equiv="content-type"/>
+        <meta content="width=device-width, initial-scale=1" name="viewport"/>
+
+        
+        <meta name="robots" content="index,follow">
+        <meta name="googlebot" content="index,follow">
+
+        <meta name="google" content="nositelinkssearchbox">
+        <meta name="google" content="notranslate">
+        
+
+        
+
+
+
+        
+        <link href="https://www.guxingke.com/style.css" rel="stylesheet"/>
+        
+        <title>
+    在 macOS 上编译 GNU Classpath - 
+</title>
+    </head>
+    <body>
+        <script>
+            function evaluate_prefers_color() {
+                if(localStorage.getItem('prefers-color') === 'dark') {
+                    document.body.classList.add('dark');
+                } else if(localStorage.getItem('prefers-color') === 'light') {
+                    document.body.classList.remove('dark');
+                } else if(window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    document.body.classList.add('dark');
+                }
+            }
+            evaluate_prefers_color();
+        </script>
+        
+    <main class="article-content">
+        <p><a href="..">..</a>/gnu-classpath-on-macos</p>
+        
+        <h1>在 macOS 上编译 GNU Classpath</h1>
+        <p>Published: <time>2021-01-10</time></p>
+        
+            <div class="chips">
+                
+                    <span class="tag">classpath</span>
+                
+                    <span class="tag">gnu</span>
+                
+            </div>
+        
+        <hr />
+        <p>记录在 macOS Catalina 上编译 GNU Classpath 0.99 的过程。</p>
+<h2 id="bian-geng-ji-lu">变更记录</h2>
+<ul>
+<li>2020-01-10 初始化</li>
+</ul>
+<h2 id="bian-yi-huan-jing">编译环境</h2>
+<ul>
+<li>macOS Catalina 10.15.6</li>
+<li>OpenJDK 8</li>
+<li>Antlr4</li>
+</ul>
+<h2 id="zhun-bei-bian-yi-huan-jing-he-yuan-wen-jian">准备编译环境和源文件</h2>
+<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#65737e;"># 安装 antlr
+</span><span style="color:#bf616a;">brew</span><span> install antlr
+</span><span>
+</span><span style="color:#65737e;"># 根目录不可写，重新挂载一下
+</span><span style="color:#bf616a;">sudo</span><span> mount</span><span style="color:#bf616a;"> -uw</span><span> /
+</span><span>
+</span><span style="color:#65737e;"># 项目路径
+</span><span style="color:#bf616a;">sudo</span><span> mkdir</span><span style="color:#bf616a;"> -p</span><span> /usr/local/app
+</span><span style="color:#bf616a;">sudo</span><span> chown</span><span style="color:#bf616a;"> -R </span><span>`</span><span style="color:#bf616a;">whoami</span><span>`:admin /usr/loca/app
+</span><span>
+</span><span style="color:#65737e;"># 下载并解压源文件
+</span><span style="color:#96b5b4;">cd</span><span> /usr/local/app
+</span><span style="color:#bf616a;">wget </span><span>&#39;</span><span style="color:#a3be8c;">https://ftp.gnu.org/gnu/classpath/classpath-0.99.tar.gz</span><span>&#39;
+</span><span style="color:#bf616a;">tar -xvf</span><span> classpath-0.99.tar.gz
+</span><span>
+</span><span>
+</span><span style="color:#65737e;"># 安装路径
+</span><span style="color:#bf616a;">sudo</span><span> mkdir</span><span style="color:#bf616a;"> -p</span><span> /usr/local/classpath
+</span><span style="color:#bf616a;">sudo</span><span> chown</span><span style="color:#bf616a;"> -R </span><span>`</span><span style="color:#bf616a;">whoami</span><span>`:admin /usr/local/classpath
+</span></code></pre>
+<h2 id="bian-yi">编译</h2>
+<h3 id="configure">configure</h3>
+<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#96b5b4;">cd</span><span> /usr/local/app/classpath-0.99
+</span><span>
+</span><span style="color:#65737e;"># configure
+</span><span style="color:#bf616a;">./configure --disable-plugin --disable-gtk-peer --disable-gjdoc --disable-examples --disable-gconf-peer --with-glibj</span><span>=both
+</span></code></pre>
+<p>没有报错则说明配置成功。</p>
+<h3 id="make-di-yi-ci">make 第一次</h3>
+<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#bf616a;">make
+</span></code></pre>
+<p>一通输出之后，最后输出为</p>
+<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#bf616a;">...
+</span><span style="color:#bf616a;">java_io_VMConsole.c:80:19:</span><span> error: use of undeclared identifier &#39;</span><span style="color:#a3be8c;">IUCLC</span><span>&#39;
+</span><span>  </span><span style="color:#bf616a;">new.c_iflag </span><span>&amp;= </span><span style="color:#bf616a;">~TERMIOS_ECHO_IFLAGS</span><span>;
+</span><span>                  </span><span style="color:#bf616a;">^
+</span><span style="color:#bf616a;">java_io_VMConsole.c:50:30:</span><span> note: expanded from macro &#39;</span><span style="color:#a3be8c;">TERMIOS_ECHO_IFLAGS</span><span>&#39;
+</span><span style="color:#65737e;">#define TERMIOS_ECHO_IFLAGS (IUCLC|IXON|IXOFF|IXANY)
+</span><span>                             </span><span style="color:#bf616a;">^
+</span><span style="color:#bf616a;">21</span><span> warnings and 1 error generated.
+</span><span style="color:#bf616a;">make[2]: </span><span>*** </span><span style="color:#b48ead;">[</span><span>java_io_VMConsole.lo</span><span style="color:#b48ead;">]</span><span> Error 1
+</span><span style="color:#bf616a;">make[1]: </span><span>*** </span><span style="color:#b48ead;">[</span><span>all-recursive</span><span style="color:#b48ead;">]</span><span> Error 1
+</span><span style="color:#bf616a;">make: </span><span>*** </span><span style="color:#b48ead;">[</span><span>all-recursive</span><span style="color:#b48ead;">]</span><span> Error 1
+</span></code></pre>
+<p>参考 <a href="https://stackoverflow.com/questions/747719/how-to-build-gnu-classpath-and-jamvm">how-to-build-gnu-classpath-and-jamvm</a>。</p>
+<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#bf616a;">sed -i </span><span>&#39;</span><span style="color:#a3be8c;">/#define/i\#define IUCLC 001000</span><span>&#39; native/jni/java-io/java_io_VMConsole.c
+</span></code></pre>
+<p>修改后继续编译</p>
+<h3 id="make-di-er-ci">make 第二次</h3>
+<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#bf616a;">make 
+</span></code></pre>
+<p>一通输出之后，最后输出为</p>
+<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#bf616a;">/bin/sh</span><span> ../../../libtool</span><span style="color:#bf616a;"> --tag</span><span>=CC</span><span style="color:#bf616a;">   --mode</span><span>=link gcc</span><span style="color:#bf616a;"> -W -Wall -Wmissing-declarations -Wwrite-strings -Wmissing-prototypes -Wno-long-long -Wstrict-prototypes -pedantic -fexceptions -fasynchronous-unwind-tables -g -O2 -version-info</span><span> 0:0:0</span><span style="color:#bf616a;"> -no-undefined  -o</span><span> libjavaio.la</span><span style="color:#bf616a;"> -rpath</span><span> /usr/local/classpath/lib/classpath java_io_VMConsole.lo java_io_VMFile.lo java_io_VMObjectInputStream.lo java_io_VMObjectStreamClass.lo ../../../native/jni/classpath/jcl.lo ../../../native/jni/native-lib/libclasspathnative.la
+</span><span style="color:#bf616a;">libtool:</span><span> link: gcc</span><span style="color:#bf616a;"> -dynamiclib  -o</span><span> .libs/libjavaio.0.dylib  .libs/java_io_VMConsole.o .libs/java_io_VMFile.o .libs/java_io_VMObjectInputStream.o .libs/java_io_VMObjectStreamClass.o ../../../native/jni/classpath/.libs/jcl.o</span><span style="color:#bf616a;">   -Wl</span><span>,-force_load,../../../native/jni/native-lib/.libs/libclasspathnative.a</span><span style="color:#bf616a;">   -O2   -install_name</span><span>  /usr/local/classpath/lib/classpath/libjavaio.0.dylib</span><span style="color:#bf616a;"> -compatibility_version</span><span> 1</span><span style="color:#bf616a;"> -current_version</span><span> 1.0</span><span style="color:#bf616a;"> -Wl</span><span>,-single_module
+</span><span style="color:#bf616a;">Undefined</span><span> symbols for architecture x86_64:
+</span><span>  &quot;</span><span style="color:#a3be8c;">___darwin_check_fd_set_overflow</span><span>&quot;</span><span style="color:#bf616a;">,</span><span> referenced from:
+</span><span>      </span><span style="color:#bf616a;">_waitForReadable</span><span> in libclasspathnative.a(cpnet.o)
+</span><span>      </span><span style="color:#bf616a;">_waitForWritable</span><span> in libclasspathnative.a(cpnet.o)
+</span><span style="color:#bf616a;">ld:</span><span> symbol(s) </span><span style="color:#bf616a;">not</span><span> found for architecture x86_64
+</span><span style="color:#bf616a;">clang:</span><span> error: linker command failed with exit code 1 (use</span><span style="color:#bf616a;"> -v</span><span> to see invocation)
+</span><span style="color:#bf616a;">make[3]: </span><span>*** </span><span style="color:#b48ead;">[</span><span>libjavaio.la</span><span style="color:#b48ead;">]</span><span> Error 1
+</span><span style="color:#bf616a;">make[2]: </span><span>*** </span><span style="color:#b48ead;">[</span><span>all-recursive</span><span style="color:#b48ead;">]</span><span> Error 1
+</span><span style="color:#bf616a;">make[1]: </span><span>*** </span><span style="color:#b48ead;">[</span><span>all-recursive</span><span style="color:#b48ead;">]</span><span> Error 1
+</span><span style="color:#bf616a;">make: </span><span>*** </span><span style="color:#b48ead;">[</span><span>all-recursive</span><span style="color:#b48ead;">]</span><span> Error 1
+</span></code></pre>
+<p>大概就是有个函数找不到了，为了编译，将相关引用注释掉。</p>
+<ol>
+<li>将 <code>native/jni/native-lib/cpnet.c</code> 文件内 <code>waitForWritable</code> 方法替换为。</li>
+</ol>
+<pre data-lang="c" style="background-color:#2b303b;color:#c0c5ce;" class="language-c "><code class="language-c" data-lang="c"><span style="color:#b48ead;">static</span><span> jint </span><span style="color:#8fa1b3;">waitForWritable</span><span>(jint </span><span style="color:#bf616a;">fd</span><span>)
+</span><span>{
+</span><span style="color:#65737e;">//  struct timeval tv;
+</span><span style="color:#65737e;">//  fd_set writeset;
+</span><span style="color:#65737e;">//  int ret;
+</span><span style="color:#65737e;">//  
+</span><span style="color:#65737e;">// 
+</span><span style="color:#65737e;">//  FD_ZERO(&amp;writeset);
+</span><span style="color:#65737e;">//  FD_SET(fd, &amp;writeset);
+</span><span style="color:#65737e;">//  if (socketTimeouts[fd] &gt; 0)
+</span><span style="color:#65737e;">//    {
+</span><span style="color:#65737e;">//      tv.tv_sec = socketTimeouts[fd] / 1000;
+</span><span style="color:#65737e;">//      tv.tv_usec = (socketTimeouts[fd] % 1000) * 1000;
+</span><span style="color:#65737e;">//      ret = select(fd+1, NULL, &amp;writeset, NULL, &amp;tv);
+</span><span style="color:#65737e;">//    }
+</span><span style="color:#65737e;">//  else
+</span><span style="color:#65737e;">//    ret = select(fd+1, NULL, &amp;writeset, NULL, NULL);
+</span><span style="color:#65737e;">//
+</span><span style="color:#65737e;">//  return (ret &lt;= 0) ? -1 : 0;
+</span><span>    </span><span style="color:#b48ead;">return </span><span style="color:#d08770;">0</span><span>;
+</span><span>}
+</span></code></pre>
+<ol start="2">
+<li>将 <code>native/jni/native-lib/cpnet.c</code> 文件内 <code>waitForReadable</code> 方法替换为。</li>
+</ol>
+<pre data-lang="c" style="background-color:#2b303b;color:#c0c5ce;" class="language-c "><code class="language-c" data-lang="c"><span style="color:#b48ead;">static</span><span> jint </span><span style="color:#8fa1b3;">waitForReadable</span><span>(jint </span><span style="color:#bf616a;">fd</span><span>)
+</span><span>{
+</span><span style="color:#65737e;">//  struct timeval tv;
+</span><span style="color:#65737e;">//  fd_set readset;
+</span><span style="color:#65737e;">//  int ret;
+</span><span style="color:#65737e;">//
+</span><span style="color:#65737e;">//
+</span><span style="color:#65737e;">//  FD_ZERO(&amp;readset);
+</span><span style="color:#65737e;">//  FD_SET(fd, &amp;readset);
+</span><span style="color:#65737e;">//  if (socketTimeouts[fd] &gt; 0)
+</span><span style="color:#65737e;">//    {
+</span><span style="color:#65737e;">//      tv.tv_sec = socketTimeouts[fd] / 1000;
+</span><span style="color:#65737e;">//      tv.tv_usec = (socketTimeouts[fd] % 1000) * 1000;
+</span><span style="color:#65737e;">//      ret = select(fd+1, &amp;readset, NULL, NULL, &amp;tv);
+</span><span style="color:#65737e;">//    }
+</span><span style="color:#65737e;">//  else
+</span><span style="color:#65737e;">//    ret = select(fd+1, &amp;readset, NULL, NULL, NULL);
+</span><span style="color:#65737e;">//
+</span><span style="color:#65737e;">//  return (ret &lt;= 0) ? -1 : 0;
+</span><span>    </span><span style="color:#b48ead;">return </span><span style="color:#d08770;">0</span><span>;
+</span><span>}
+</span></code></pre>
+<h3 id="make-di-san-ci">make 第三次</h3>
+<p>继续编译</p>
+<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#bf616a;">make
+</span></code></pre>
+<p>一通输出之后，最后输出为</p>
+<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#bf616a;">libtool:</span><span> link: gcc</span><span style="color:#bf616a;"> -dynamiclib  -o</span><span> .libs/libjavanio.0.dylib  .libs/gnu_java_nio_VMPipe.o .libs/gnu_java_nio_VMChannel.o .libs/gnu_java_nio_VMSelector.o .libs/gnu_java_nio_charset_iconv_IconvDecoder.o .libs/gnu_java_nio_charset_iconv_IconvEncoder.o .libs/java_nio_MappedByteBufferImpl.o .libs/java_nio_VMDirectByteBuffer.o .libs/gnu_java_nio_EpollSelectorImpl.o .libs/gnu_java_nio_KqueueSelectorImpl.o ../../../native/jni/classpath/.libs/jcl.o</span><span style="color:#bf616a;">   -Wl</span><span>,-force_load,../../../native/jni/native-lib/.libs/libclasspathnative.a</span><span style="color:#bf616a;">  -liconv  -O2   -install_name</span><span>  /usr/local/classpath/lib/classpath/libjavanio.0.dylib</span><span style="color:#bf616a;"> -compatibility_version</span><span> 1</span><span style="color:#bf616a;"> -current_version</span><span> 1.0</span><span style="color:#bf616a;"> -Wl</span><span>,-single_module
+</span><span style="color:#bf616a;">Undefined</span><span> symbols for architecture x86_64:
+</span><span>  &quot;</span><span style="color:#a3be8c;">___darwin_check_fd_set_overflow</span><span>&quot;</span><span style="color:#bf616a;">,</span><span> referenced from:
+</span><span>      </span><span style="color:#bf616a;">_Java_gnu_java_nio_VMChannel_connect</span><span> in gnu_java_nio_VMChannel.o
+</span><span>      </span><span style="color:#bf616a;">_Java_gnu_java_nio_VMChannel_connect6</span><span> in gnu_java_nio_VMChannel.o
+</span><span>      </span><span style="color:#bf616a;">_Java_gnu_java_nio_VMChannel_accept</span><span> in gnu_java_nio_VMChannel.o
+</span><span>      </span><span style="color:#bf616a;">_helper_put_filedescriptors</span><span> in gnu_java_nio_VMSelector.o
+</span><span>      </span><span style="color:#bf616a;">_helper_get_filedescriptors</span><span> in gnu_java_nio_VMSelector.o
+</span><span>      </span><span style="color:#bf616a;">_Java_gnu_java_nio_VMSelector_select</span><span> in gnu_java_nio_VMSelector.o
+</span><span style="color:#bf616a;">ld:</span><span> symbol(s) </span><span style="color:#bf616a;">not</span><span> found for architecture x86_64
+</span><span style="color:#bf616a;">clang:</span><span> error: linker command failed with exit code 1 (use</span><span style="color:#bf616a;"> -v</span><span> to see invocation)
+</span><span style="color:#bf616a;">make[3]: </span><span>*** </span><span style="color:#b48ead;">[</span><span>libjavanio.la</span><span style="color:#b48ead;">]</span><span> Error 1
+</span><span style="color:#bf616a;">make[2]: </span><span>*** </span><span style="color:#b48ead;">[</span><span>all-recursive</span><span style="color:#b48ead;">]</span><span> Error 1
+</span><span style="color:#bf616a;">make[1]: </span><span>*** </span><span style="color:#b48ead;">[</span><span>all-recursive</span><span style="color:#b48ead;">]</span><span> Error 1
+</span><span style="color:#bf616a;">make: </span><span>*** </span><span style="color:#b48ead;">[</span><span>all-recursive</span><span style="color:#b48ead;">]</span><span> Error 1
+</span></code></pre>
+<p>与上面的报错一直，同理，注释掉相关代码, 看代码发现内部有宏控制，修改 <code>src/config.h.in</code> 文件。</p>
+<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#bf616a;">sed -i </span><span>&#39;</span><span style="color:#a3be8c;">/#undef HAVE_CONNECT/i\/\//</span><span>&#39; src/config.h.in
+</span><span style="color:#bf616a;">sed -i </span><span>&#39;</span><span style="color:#a3be8c;">/#undef HAVE_ACCEPT/i\/\//</span><span>&#39; src/config.h.in
+</span></code></pre>
+<p>而下方三个需要注释方法体。</p>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>_helper_put_filedescriptors in gnu_java_nio_VMSelector.o
+</span><span>_helper_get_filedescriptors in gnu_java_nio_VMSelector.o
+</span><span>_Java_gnu_java_nio_VMSelector_select in gnu_java_nio_VMSelector.o
+</span></code></pre>
+<ol>
+<li>将 <code>native/jni/java-nio/gnu_java_nio_VMSelector.c</code> 文件内 <code>helper_put_filedescriptors</code> 方法替换为。</li>
+</ol>
+<pre data-lang="c" style="background-color:#2b303b;color:#c0c5ce;" class="language-c "><code class="language-c" data-lang="c"><span style="color:#b48ead;">void
+</span><span style="color:#8fa1b3;">helper_put_filedescriptors </span><span>(JNIEnv * </span><span style="color:#bf616a;">env</span><span>, jintArray </span><span style="color:#bf616a;">fdArray</span><span>, fd_set * </span><span style="color:#bf616a;">fds</span><span>,
+</span><span>			    </span><span style="color:#b48ead;">int </span><span>*</span><span style="color:#bf616a;">max_fd</span><span>){
+</span><span>}
+</span></code></pre>
+<ol start="2">
+<li>将 <code>native/jni/java-nio/gnu_java_nio_VMSelector.c</code> 文件内 <code>helper_get_filedescriptors</code> 方法替换为。</li>
+</ol>
+<pre data-lang="c" style="background-color:#2b303b;color:#c0c5ce;" class="language-c "><code class="language-c" data-lang="c"><span style="color:#b48ead;">void
+</span><span style="color:#8fa1b3;">helper_put_filedescriptors </span><span>(JNIEnv * </span><span style="color:#bf616a;">env</span><span>, jintArray </span><span style="color:#bf616a;">fdArray</span><span>, fd_set * </span><span style="color:#bf616a;">fds</span><span>,
+</span><span>			    </span><span style="color:#b48ead;">int </span><span>*</span><span style="color:#bf616a;">max_fd</span><span>){
+</span><span>}
+</span></code></pre>
+<ol start="3">
+<li>将 <code>native/jni/java-nio/gnu_java_nio_VMSelector.c</code> 文件内 <code>Java_gnu_java_nio_VMSelector_select</code> 方法替换为。</li>
+</ol>
+<pre data-lang="c" style="background-color:#2b303b;color:#c0c5ce;" class="language-c "><code class="language-c" data-lang="c"><span>JNIEXPORT jint JNICALL
+</span><span style="color:#8fa1b3;">Java_gnu_java_nio_VMSelector_select </span><span>(JNIEnv * </span><span style="color:#bf616a;">env</span><span>,
+</span><span>				     jclass obj </span><span style="color:#b48ead;">__attribute__ </span><span>((__unused__)),
+</span><span>				     jintArray </span><span style="color:#bf616a;">read</span><span>,
+</span><span>				     jintArray </span><span style="color:#bf616a;">write</span><span>,
+</span><span>				     jintArray </span><span style="color:#bf616a;">except</span><span>, jlong </span><span style="color:#bf616a;">timeout</span><span>)
+</span><span>{
+</span><span>  </span><span style="color:#b48ead;">return </span><span style="color:#d08770;">0</span><span>;
+</span><span>}
+</span><span>
+</span></code></pre>
+<h3 id="make-di-si-ci">make 第四次</h3>
+<p>重新配置并编译</p>
+<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#bf616a;">./configure --disable-plugin --disable-gtk-peer --disable-gjdoc --disable-examples --disable-gconf-peer --with-glibj</span><span>=both
+</span><span style="color:#bf616a;">make
+</span></code></pre>
+<p>一通输出之后，最后输出为</p>
+<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#bf616a;">test -z </span><span>&quot;</span><span style="color:#a3be8c;">/usr/local/classpath/bin</span><span>&quot; || </span><span style="color:#bf616a;">/usr/local/opt/coreutils/libexec/gnubin/mkdir -p </span><span>&quot;</span><span style="color:#a3be8c;">/usr/local/classpath/bin</span><span>&quot;
+</span><span> </span><span style="color:#bf616a;">/usr/local/opt/coreutils/libexec/gnubin/install -c</span><span> gappletviewer gjarsigner gkeytool gjar gnative2ascii gserialver gjavah grmiregistry gtnameserv gorbd grmid grmic &#39;</span><span style="color:#a3be8c;">/usr/local/classpath/bin</span><span>&#39;
+</span><span style="color:#bf616a;">test -z </span><span>&quot;</span><span style="color:#a3be8c;">/usr/local/classpath/share/classpath</span><span>&quot; || </span><span style="color:#bf616a;">/usr/local/opt/coreutils/libexec/gnubin/mkdir -p </span><span>&quot;</span><span style="color:#a3be8c;">/usr/local/classpath/share/classpath</span><span>&quot;
+</span><span> </span><span style="color:#bf616a;">/usr/local/opt/coreutils/libexec/gnubin/install -c -m</span><span> 644 tools.zip &#39;</span><span style="color:#a3be8c;">/usr/local/classpath/share/classpath</span><span>&#39;
+</span><span style="color:#bf616a;">make[2]:</span><span> Nothing to be done for `</span><span style="color:#bf616a;">install-exec-am</span><span>&#39;</span><span style="color:#a3be8c;">.
+</span><span style="color:#a3be8c;">make[2]: Nothing to be done for `install-data-am</span><span>&#39;</span><span style="color:#bf616a;">.
+</span></code></pre>
+<p>编译成功。</p>
+<h2 id="an-zhuang">安装</h2>
+<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#bf616a;">make</span><span> install 
+</span></code></pre>
+<p>不出意外 <code>/usr/local/classpath</code> 目录下结构如下</p>
+<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#bf616a;">tree -L</span><span> 3</span><span style="color:#bf616a;"> -d</span><span> /usr/local/classpath
+</span></code></pre>
+<p>=&gt; </p>
+<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#bf616a;">/usr/local/classpath/
+</span><span style="color:#bf616a;">├──</span><span> bin
+</span><span style="color:#bf616a;">├──</span><span> include
+</span><span style="color:#bf616a;">├──</span><span> lib
+</span><span style="color:#bf616a;">│</span><span>   ├── classpath
+</span><span style="color:#bf616a;">│</span><span>   └── security
+</span><span style="color:#bf616a;">└──</span><span> share
+</span><span>    </span><span style="color:#bf616a;">├──</span><span> classpath
+</span><span>    </span><span style="color:#bf616a;">│</span><span>   ├── META-INF
+</span><span>    </span><span style="color:#bf616a;">│</span><span>   ├── gnu
+</span><span>    </span><span style="color:#bf616a;">│</span><span>   ├── java
+</span><span>    </span><span style="color:#bf616a;">│</span><span>   ├── javax
+</span><span>    </span><span style="color:#bf616a;">│</span><span>   ├── org
+</span><span>    </span><span style="color:#bf616a;">│</span><span>   └── sun
+</span><span>    </span><span style="color:#bf616a;">├──</span><span> info
+</span><span>    </span><span style="color:#bf616a;">└──</span><span> man
+</span><span>        </span><span style="color:#bf616a;">└──</span><span> man1
+</span><span>
+</span><span style="color:#bf616a;">16</span><span> directories
+</span></code></pre>
+<h2 id="qi-ta">其他</h2>
+<p>修改之后的项目仓库 <a href="https://github.com/guxingke/classpath-0.99">classpath-0.99</a><br />
+此次变更的 commit <a href="https://github.com/guxingke/classpath-0.99/commit/c9fbfb4991680d9f7c49300143a5243fe5aac7e1">c9fbfb4</a></p>
+
+    </main>
+
+        <footer>
+            <hr text="&copy; Copyright 2022" />
+            
+            <div class="footer-social-media">
+                <a onclick="toggle_prefers_color()">Toggle Theme</a>
+                
+                    <a href="https://github.com/guxingke" target="_blank">GitHub</a>
+                
+                    <a href="https://twitter.com/@guxingke" target="_blank">Twitter</a>
+                
+            </div>
+            
+        </footer>
+    </body>
+
+    
+        <script src="https://www.guxingke.com/js/script.js"/></script>
+    
+</html>

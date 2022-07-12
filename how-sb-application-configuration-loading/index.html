@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta content="IE=edge" http-equiv="X-UA-Compatible"/>
+        <meta content="text/html; charset=utf-8" http-equiv="content-type"/>
+        <meta content="width=device-width, initial-scale=1" name="viewport"/>
+
+        
+        <meta name="robots" content="index,follow">
+        <meta name="googlebot" content="index,follow">
+
+        <meta name="google" content="nositelinkssearchbox">
+        <meta name="google" content="notranslate">
+        
+
+        
+
+
+
+        
+        <link href="https://www.guxingke.com/style.css" rel="stylesheet"/>
+        
+        <title>
+    配置 SpringBoot, 应用配置如何被加载 - 
+</title>
+    </head>
+    <body>
+        <script>
+            function evaluate_prefers_color() {
+                if(localStorage.getItem('prefers-color') === 'dark') {
+                    document.body.classList.add('dark');
+                } else if(localStorage.getItem('prefers-color') === 'light') {
+                    document.body.classList.remove('dark');
+                } else if(window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    document.body.classList.add('dark');
+                }
+            }
+            evaluate_prefers_color();
+        </script>
+        
+    <main class="article-content">
+        <p><a href="..">..</a>/how-sb-application-configuration-loading</p>
+        
+        <h1>配置 SpringBoot, 应用配置如何被加载</h1>
+        <p>Published: <time>2018-12-18</time></p>
+        
+            <div class="chips">
+                
+                    <span class="tag">spring</span>
+                
+                    <span class="tag">springboot</span>
+                
+                    <span class="tag">config</span>
+                
+            </div>
+        
+        <hr />
+        <blockquote>
+<p>源码之下,没有秘密.</p>
+</blockquote>
+<hr />
+<p>接上篇, 探索如何解决保证自定义配置能被加载,并且兼容 springboot 默认所有配置. </p>
+<p>回答上篇留下的几个问题</p>
+<ul>
+<li>有没有更优雅的解决此问题的方法? </li>
+<li>为何 Spring Boot 的配置文件加载顺序是这般定义? </li>
+<li>Spring Boot 加载配置是如何实现的? </li>
+<li>Spring Cloud Config 等配置中心的配置是如何结合到具体应用中的? </li>
+<li>Spring Cloud Config 等配置中心的配置支持日志系统配置文件位置的配置吗? </li>
+</ul>
+<h2 id="xian-kan-yuan-ma">先看源码</h2>
+<h3 id="he-xin-dai-ma-jiu-yi-xing">核心代码就一行</h3>
+<pre data-lang="java" style="background-color:#2b303b;color:#c0c5ce;" class="language-java "><code class="language-java" data-lang="java"><span style="color:#ebcb8b;">ConfigurableEnvironment</span><span> environment = </span><span style="color:#bf616a;">prepareEnvironment</span><span>(listeners, applicationArguments);
+</span></code></pre>
+<p>Spring Boot 2.0.4 版, org.springframework.boot.SpringApplication  line: 320</p>
+<p>为什么核心就此一行</p>
+<p>在此行代码执行之前, environment 不出意外是没有初始化的(后文解释). </p>
+<p>在此行代码执行之后, environment 正式创建完毕. 在此之后继续加载配置文件, 有些配置属性是不生效的, 比如 spring.profiles.active. </p>
+<h3 id="shen-ru-kan-kan">深入看看</h3>
+<pre data-lang="java" style="background-color:#2b303b;color:#c0c5ce;" class="language-java "><code class="language-java" data-lang="java"><span style="color:#b48ead;">private </span><span style="color:#ebcb8b;">ConfigurableEnvironment </span><span style="color:#bf616a;">prepareEnvironment</span><span>(
+</span><span>        </span><span style="color:#ebcb8b;">SpringApplicationRunListeners</span><span> listeners,
+</span><span>        </span><span style="color:#ebcb8b;">ApplicationArguments</span><span> applicationArguments) {
+</span><span>    </span><span style="color:#65737e;">// Create and configure the environment
+</span><span>    </span><span style="color:#ebcb8b;">ConfigurableEnvironment</span><span> environment = </span><span style="color:#bf616a;">getOrCreateEnvironment</span><span>();  </span><span style="color:#65737e;">// 1
+</span><span>    </span><span style="color:#bf616a;">configureEnvironment</span><span>(environment, applicationArguments.</span><span style="color:#bf616a;">getSourceArgs</span><span>()); </span><span style="color:#65737e;">// 2 
+</span><span>    listeners.</span><span style="color:#bf616a;">environmentPrepared</span><span>(environment); </span><span style="color:#65737e;">// 3
+</span><span>    </span><span style="color:#bf616a;">bindToSpringApplication</span><span>(environment);
+</span><span>    </span><span style="color:#b48ead;">if </span><span>(</span><span style="color:#bf616a;">this</span><span>.webApplicationType == </span><span style="color:#ebcb8b;">WebApplicationType</span><span>.</span><span style="color:#d08770;">NONE</span><span>) {
+</span><span>        environment = </span><span style="color:#b48ead;">new </span><span style="color:#ebcb8b;">EnvironmentConverter</span><span>(</span><span style="color:#bf616a;">getClassLoader</span><span>())
+</span><span>                .</span><span style="color:#bf616a;">convertToStandardEnvironmentIfNecessary</span><span>(environment);
+</span><span>    }
+</span><span>    </span><span style="color:#ebcb8b;">ConfigurationPropertySources</span><span>.</span><span style="color:#bf616a;">attach</span><span>(environment);
+</span><span>    </span><span style="color:#b48ead;">return</span><span> environment;
+</span><span>}
+</span></code></pre>
+<p>核心关注点就方法前两行. </p>
+<h4 id="getorcreateenvironment">getOrCreateEnvironment</h4>
+<pre data-lang="java" style="background-color:#2b303b;color:#c0c5ce;" class="language-java "><code class="language-java" data-lang="java"><span style="color:#b48ead;">private </span><span style="color:#ebcb8b;">ConfigurableEnvironment </span><span style="color:#bf616a;">getOrCreateEnvironment</span><span>() {
+</span><span>    </span><span style="color:#b48ead;">if </span><span>(</span><span style="color:#bf616a;">this</span><span>.environment != </span><span style="color:#d08770;">null</span><span>) {
+</span><span>        </span><span style="color:#b48ead;">return </span><span style="color:#bf616a;">this</span><span>.environment;
+</span><span>    }
+</span><span>    </span><span style="color:#b48ead;">if </span><span>(</span><span style="color:#bf616a;">this</span><span>.webApplicationType == </span><span style="color:#ebcb8b;">WebApplicationType</span><span>.</span><span style="color:#d08770;">SERVLET</span><span>) {
+</span><span>        </span><span style="color:#b48ead;">return new </span><span style="color:#ebcb8b;">StandardServletEnvironment</span><span>();
+</span><span>    }
+</span><span>    </span><span style="color:#b48ead;">return new </span><span style="color:#ebcb8b;">StandardEnvironment</span><span>();
+</span><span>}
+</span></code></pre>
+<p>这个方法有点意思,  如果 SpringApplication 实例的 属性 environment 是有值的话, 返回的就是当前实例的 environment. 这是个切入点, 如果能保证这个 environment 是已经加载了自定义配置文件的 environment, 自然可以保证 Spring Boot 的所有配置均支持. </p>
+<h4 id="configureenvironment">configureEnvironment</h4>
+<pre data-lang="java" style="background-color:#2b303b;color:#c0c5ce;" class="language-java "><code class="language-java" data-lang="java"><span style="color:#b48ead;">protected</span><span> void </span><span style="color:#bf616a;">configureEnvironment</span><span>(</span><span style="color:#ebcb8b;">ConfigurableEnvironment</span><span> environment,
+</span><span>        </span><span style="color:#ebcb8b;">String</span><span style="color:#b48ead;">[]</span><span> args) {
+</span><span>    </span><span style="color:#bf616a;">configurePropertySources</span><span>(environment, args);
+</span><span>    </span><span style="color:#bf616a;">configureProfiles</span><span>(environment, args);
+</span><span>}
+</span></code></pre>
+<p>这是另一个切入点,  关注一下这个方法是被 protectted 修饰的, 可以重写之.</p>
+<p>方法体里的两个方法也是 protected 修饰, <code>configurePropertySources(environment, args)</code> 这个方法实现了上篇提到的 官方文档加载顺序的 第 4-15 步骤, 细节不谈.  可以复写以支持自定义的配置文件加载. </p>
+<h4 id="zai-kan-kan-di-san-xing">再看看第三行</h4>
+<pre data-lang="java" style="background-color:#2b303b;color:#c0c5ce;" class="language-java "><code class="language-java" data-lang="java"><span>listeners.</span><span style="color:#bf616a;">environmentPrepared</span><span>(environment)
+</span></code></pre>
+<p>众所周知, Spring 扩展点尤其多, Spring Boot 也不例外. 
+这个 listeners 是什么东西? </p>
+<pre data-lang="java" style="background-color:#2b303b;color:#c0c5ce;" class="language-java "><code class="language-java" data-lang="java"><span style="color:#b48ead;">class </span><span style="color:#ebcb8b;">SpringApplicationRunListeners </span><span style="color:#eff1f5;">{
+</span><span style="color:#eff1f5;">	</span><span style="color:#b48ead;">private final </span><span style="color:#ebcb8b;">List</span><span style="color:#eff1f5;">&lt;</span><span style="color:#ebcb8b;">SpringApplicationRunListener</span><span style="color:#eff1f5;">&gt; listeners;
+</span><span style="color:#eff1f5;">}
+</span></code></pre>
+<p>SpringApplicationRunListener 又是什么? </p>
+<pre data-lang="java" style="background-color:#2b303b;color:#c0c5ce;" class="language-java "><code class="language-java" data-lang="java"><span style="color:#b48ead;">public interface </span><span style="color:#ebcb8b;">SpringApplicationRunListener </span><span style="color:#eff1f5;">{
+</span><span style="color:#eff1f5;">
+</span><span style="color:#eff1f5;">	</span><span style="color:#65737e;">/**
+</span><span style="color:#65737e;">	 * Called immediately when the run method has first started. Can be used for very
+</span><span style="color:#65737e;">	 * early initialization.
+</span><span style="color:#65737e;">	 */
+</span><span style="color:#65737e;">	void starting();
+</span><span style="color:#65737e;">
+</span><span style="color:#65737e;">	/**
+</span><span style="color:#65737e;">	 * Called once the environment has been prepared, but before the
+</span><span style="color:#65737e;">	 * {</span><span style="color:#b48ead;">@link </span><span style="color:#65737e;">ApplicationContext} has been created.
+</span><span style="color:#65737e;">	 * </span><span style="color:#b48ead;">@param </span><span style="color:#bf616a;">environment</span><span style="color:#65737e;"> the environment
+</span><span style="color:#65737e;">	 */
+</span><span style="color:#65737e;">	void environmentPrepared(ConfigurableEnvironment environment);
+</span><span style="color:#65737e;">
+</span><span style="color:#65737e;">	/**
+</span><span style="color:#65737e;">	 * Called once the {</span><span style="color:#b48ead;">@link </span><span style="color:#65737e;">ApplicationContext} has been created and prepared, but
+</span><span style="color:#65737e;">	 * before sources have been loaded.
+</span><span style="color:#65737e;">	 * </span><span style="color:#b48ead;">@param </span><span style="color:#bf616a;">context</span><span style="color:#65737e;"> the application context
+</span><span style="color:#65737e;">	 */
+</span><span style="color:#65737e;">	void contextPrepared(ConfigurableApplicationContext context);
+</span><span style="color:#65737e;">
+</span><span style="color:#65737e;">	/**
+</span><span style="color:#65737e;">	 * Called once the application context has been loaded but before it has been
+</span><span style="color:#65737e;">	 * refreshed.
+</span><span style="color:#65737e;">	 * </span><span style="color:#b48ead;">@param </span><span style="color:#bf616a;">context</span><span style="color:#65737e;"> the application context
+</span><span style="color:#65737e;">	 */
+</span><span style="color:#65737e;">	void contextLoaded(ConfigurableApplicationContext context);
+</span><span style="color:#65737e;">
+</span><span style="color:#65737e;">	/**
+</span><span style="color:#65737e;">	 * The context has been refreshed and the application has started but
+</span><span style="color:#65737e;">	 * {</span><span style="color:#b48ead;">@link </span><span style="color:#65737e;">CommandLineRunner CommandLineRunners} and {</span><span style="color:#b48ead;">@link </span><span style="color:#65737e;">ApplicationRunner
+</span><span style="color:#65737e;">	 * ApplicationRunners} have not been called.
+</span><span style="color:#65737e;">	 * </span><span style="color:#b48ead;">@param </span><span style="color:#bf616a;">context</span><span style="color:#65737e;"> the application context.
+</span><span style="color:#65737e;">	 * </span><span style="color:#b48ead;">@since</span><span style="color:#65737e;"> 2.0.0
+</span><span style="color:#65737e;">	 */
+</span><span style="color:#65737e;">	void started(ConfigurableApplicationContext context);
+</span><span style="color:#65737e;">
+</span><span style="color:#65737e;">	/**
+</span><span style="color:#65737e;">	 * Called immediately before the run method finishes, when the application context has
+</span><span style="color:#65737e;">	 * been refreshed and all {</span><span style="color:#b48ead;">@link </span><span style="color:#65737e;">CommandLineRunner CommandLineRunners} and
+</span><span style="color:#65737e;">	 * {</span><span style="color:#b48ead;">@link </span><span style="color:#65737e;">ApplicationRunner ApplicationRunners} have been called.
+</span><span style="color:#65737e;">	 * </span><span style="color:#b48ead;">@param </span><span style="color:#bf616a;">context</span><span style="color:#65737e;"> the application context.
+</span><span style="color:#65737e;">	 * </span><span style="color:#b48ead;">@since</span><span style="color:#65737e;"> 2.0.0
+</span><span style="color:#65737e;">	 */
+</span><span style="color:#65737e;">	void running(ConfigurableApplicationContext context);
+</span><span style="color:#65737e;">
+</span><span style="color:#65737e;">	/**
+</span><span style="color:#65737e;">	 * Called when a failure occurs when running the application.
+</span><span style="color:#65737e;">	 * </span><span style="color:#b48ead;">@param </span><span style="color:#bf616a;">context</span><span style="color:#65737e;"> the application context or {</span><span style="color:#b48ead;">@code </span><span style="color:#65737e;">null} if a failure occurred before
+</span><span style="color:#65737e;">	 * the context was created
+</span><span style="color:#65737e;">	 * </span><span style="color:#b48ead;">@param </span><span style="color:#bf616a;">exception</span><span style="color:#65737e;"> the failure
+</span><span style="color:#65737e;">	 * </span><span style="color:#b48ead;">@since</span><span style="color:#65737e;"> 2.0.0
+</span><span style="color:#65737e;">	 */
+</span><span style="color:#65737e;">	void failed(ConfigurableApplicationContext context, Throwable exception);
+</span><span style="color:#65737e;">}
+</span></code></pre>
+<p>比较明显了, Spring Boot 启动生命周期的监听器. 
+如果能在 <code>void starting();</code>中初始化 environment 并设置到 SpringApplication environment 属性, 问题解决. </p>
+<h2 id="que-ding-fang-an">确定方案</h2>
+<ol>
+<li>实现 SpringApplicationRunListener , 在 staring 方法中加载自定义配置到 environment 中.</li>
+<li>复写 configureEnvironment 方法. </li>
+</ol>
+<p>相对来讲, 方案 2 成本略高. </p>
+<p>采用方案1</p>
+<h2 id="luo-di">落地</h2>
+<p>方案确定后, 实现很简单. </p>
+<p>核心代码</p>
+<pre data-lang="java" style="background-color:#2b303b;color:#c0c5ce;" class="language-java "><code class="language-java" data-lang="java"><span>  @</span><span style="color:#bf616a;">Override
+</span><span>  </span><span style="color:#b48ead;">public</span><span> void </span><span style="color:#bf616a;">starting</span><span>() {
+</span><span>
+</span><span>    </span><span style="color:#ebcb8b;">ConfigurableEnvironment</span><span> environment = </span><span style="color:#bf616a;">this</span><span>.</span><span style="color:#bf616a;">getOrCreateEnvironment</span><span>();
+</span><span>
+</span><span>    </span><span style="color:#ebcb8b;">Class</span><span>&lt;?&gt; applicationClass = application.</span><span style="color:#bf616a;">getMainApplicationClass</span><span>();
+</span><span>    </span><span style="color:#ebcb8b;">DtConfig</span><span> annotation = applicationClass.</span><span style="color:#bf616a;">getAnnotation</span><span>(</span><span style="color:#ebcb8b;">DtConfig</span><span>.</span><span style="color:#bf616a;">class</span><span>);
+</span><span>    </span><span style="color:#b48ead;">if </span><span>(annotation == </span><span style="color:#d08770;">null</span><span>) {
+</span><span>      </span><span style="color:#b48ead;">return</span><span>;
+</span><span>    }
+</span><span>
+</span><span>    </span><span style="color:#ebcb8b;">String</span><span> path = annotation.</span><span style="color:#bf616a;">value</span><span>();
+</span><span>
+</span><span>    </span><span style="color:#ebcb8b;">Resource</span><span> resource = </span><span style="color:#d08770;">null</span><span>;
+</span><span>    </span><span style="color:#b48ead;">if </span><span>(path.</span><span style="color:#bf616a;">startsWith</span><span>(&quot;</span><span style="color:#a3be8c;">classpath</span><span>&quot;)) {
+</span><span>      resource = </span><span style="color:#b48ead;">new </span><span style="color:#ebcb8b;">ClassPathResource</span><span>(path.</span><span style="color:#bf616a;">substring</span><span>(</span><span style="color:#d08770;">10</span><span>));
+</span><span>    } </span><span style="color:#b48ead;">else </span><span>{
+</span><span>      </span><span style="color:#b48ead;">try </span><span>{
+</span><span>        resource = </span><span style="color:#b48ead;">new </span><span style="color:#ebcb8b;">FileUrlResource</span><span>(path);
+</span><span>      } </span><span style="color:#b48ead;">catch </span><span>(</span><span style="color:#ebcb8b;">MalformedURLException </span><span style="color:#bf616a;">e</span><span>) {
+</span><span>        resource = </span><span style="color:#b48ead;">new </span><span style="color:#ebcb8b;">FileSystemResource</span><span>(path);
+</span><span>      }
+</span><span>    }
+</span><span>
+</span><span>    </span><span style="color:#ebcb8b;">PropertySource</span><span>&lt;?&gt; propertySource = </span><span style="color:#bf616a;">loadProperties</span><span>(&quot;</span><span style="color:#a3be8c;">Dtconfig</span><span>&quot;, resource, loader);
+</span><span>
+</span><span>    environment.</span><span style="color:#bf616a;">getPropertySources</span><span>().</span><span style="color:#bf616a;">addFirst</span><span>(propertySource);
+</span><span>
+</span><span>    application.</span><span style="color:#bf616a;">setEnvironment</span><span>(environment);
+</span><span>  }
+</span></code></pre>
+<p>详细代码, 传送门 <a href="https://github.com/guxingke/demo/tree/master/sb-demo/sb-config">sb-config</a></p>
+<h2 id="wen-ti-jie-da">问题解答</h2>
+<ul>
+<li>
+<p>有没有更优雅的解决此问题的方法? 
+有, 如上. </p>
+</li>
+<li>
+<p>为何 Spring Boot 的配置文件加载顺序是这般定义? 
+暂且跳过, 没什么好说的, 约定优于配置, 配置分层级, 越靠近用户端, 配置的优先级越高. </p>
+</li>
+<li>
+<p>Spring Boot 加载配置是如何实现的? 
+参阅 configurePropertySources 方法, 过于细节.</p>
+</li>
+<li>
+<p>Spring Cloud Config 等配置中心的配置是如何结合到具体应用中的? </p>
+<ul>
+<li>Spring Cloud Config, Spring Boot 的自动配置</li>
+<li>apollo, Spring Boot 的自动配置</li>
+</ul>
+</li>
+<li>
+<p>Spring Cloud Config 等配置中心的配置支持日志系统配置文件位置的配置吗? 
+不支持, 几乎可以断言, 如果配置中心没有采用上文的实现方式, 这个问题是解决不了的. </p>
+</li>
+</ul>
+<h2 id="ref">REF</h2>
+<ul>
+<li><a href="https://docs.spring.io/spring-boot/docs/current/reference/html/boot-features-external-config.html#boot-features-external-config">Externalized Configuration</a></li>
+<li><a href="https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#boot-features-custom-log-configuration">Custom Log Configuration</a></li>
+<li><a href="https://docs.spring.io/spring-boot/docs/current/reference/html/boot-features-external-config.html#boot-features-external-config-application-property-files">Application Property Files</a></li>
+<li><a href="https://www.guxingke.com/posts/beginer-for-sb-logging-system-configuration.html">配置SpringBoot-从日志系统配置说起</a></li>
+</ul>
+
+    </main>
+
+        <footer>
+            <hr text="&copy; Copyright 2022" />
+            
+            <div class="footer-social-media">
+                <a onclick="toggle_prefers_color()">Toggle Theme</a>
+                
+                    <a href="https://github.com/guxingke" target="_blank">GitHub</a>
+                
+                    <a href="https://twitter.com/@guxingke" target="_blank">Twitter</a>
+                
+            </div>
+            
+        </footer>
+    </body>
+
+    
+        <script src="https://www.guxingke.com/js/script.js"/></script>
+    
+</html>

@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta content="IE=edge" http-equiv="X-UA-Compatible"/>
+        <meta content="text/html; charset=utf-8" http-equiv="content-type"/>
+        <meta content="width=device-width, initial-scale=1" name="viewport"/>
+
+        
+        <meta name="robots" content="index,follow">
+        <meta name="googlebot" content="index,follow">
+
+        <meta name="google" content="nositelinkssearchbox">
+        <meta name="google" content="notranslate">
+        
+
+        
+
+
+
+        
+        <link href="https://www.guxingke.com/style.css" rel="stylesheet"/>
+        
+        <title>
+    图片存储-从七牛到 Github - 
+</title>
+    </head>
+    <body>
+        <script>
+            function evaluate_prefers_color() {
+                if(localStorage.getItem('prefers-color') === 'dark') {
+                    document.body.classList.add('dark');
+                } else if(localStorage.getItem('prefers-color') === 'light') {
+                    document.body.classList.remove('dark');
+                } else if(window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    document.body.classList.add('dark');
+                }
+            }
+            evaluate_prefers_color();
+        </script>
+        
+    <main class="article-content">
+        <p><a href="..">..</a>/photo-storage-mig-qiniu-to-github</p>
+        
+        <h1>图片存储-从七牛到 Github</h1>
+        <p>Published: <time>2019-01-12</time></p>
+        
+            <div class="chips">
+                
+                    <span class="tag">oss</span>
+                
+            </div>
+        
+        <hr />
+        <blockquote>
+<p>FQ, 只有第一次和无数次.</p>
+</blockquote>
+<p>解决方案 + alfred workflow . 快速贴图. </p>
+<p>缘起, 最近因为域名备案的事情, 我原本的域名备案被撤销了. 
+导致 七牛 把 oss 绑定的域名停用了, 进而导致散落在各处的图片链接均不可访问. </p>
+<p>然而备案的流程还是挺麻烦的, 趁此机会, 把图床从七牛迁出来不也挺好. </p>
+<h2 id="bu-zou">步骤</h2>
+<h3 id="bei-fen-yuan-tu">备份原图</h3>
+<p>由于七牛没有绑定域名, 图片是不让下载的, 所以你需要一位密友把域名借你一用, 把原图先备份到本地. </p>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>qshell qdownload -c 10 qd.conf
+</span></code></pre>
+<p>具体操作 参考 七牛 qshell 文档. </p>
+<h3 id="zhun-bei-github-cang-ku-ti-jiao-tu-pian-dao-github">准备 Github 仓库 , 提交图片到 Github.</h3>
+<p>可参考 <a href="https://github.com/guxingke/oss">oss</a></p>
+<h3 id="ti-huan-yuan-tu-pian-lian-jie-dao-github-lian-jie">替换原图片链接到 Github 链接.</h3>
+<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#bf616a;">grep </span><span>&quot;</span><span style="color:#a3be8c;">images.guxingke.com</span><span>&quot;</span><span style="color:#bf616a;"> -R </span><span>*</span><span style="color:#bf616a;"> -l </span><span>| </span><span style="color:#bf616a;">xargs</span><span> sed</span><span style="color:#bf616a;"> -i </span><span>&quot;</span><span style="color:#a3be8c;">s/images.guxingke.com/raw.githubusercontent.com\/guxingke\/oss\/master\/blog/g</span><span>&quot;
+</span></code></pre>
+<p>可参考, 根据实际情况替换. </p>
+<h3 id="yi-shang-bu-zou-yi-wan-cheng-tu-chuang-qie-huan">以上步骤已完成图床切换.</h3>
+<p><del>分隔线</del></p>
+<h3 id="ti-gao-sheng-chan-li-shi-yong-alfred-workflow">提高生产力, 使用 Alfred Workflow.</h3>
+<p>使用 <a href="https://github.com/guxingke/github-img-alfred">github-img-alfred</a></p>
+<p><img src="https://raw.githubusercontent.com/guxingke/oss/master/blog/1547266077.png" alt="1547266077.png" /></p>
+<p>比如上面这张, 仅需要截图 加上 快捷键, 即可在编辑器内复制 Markdown 图片格式.</p>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>![1547266209.png](https://raw.githubusercontent.com/guxingke/oss/master/blog/1547266209.png)
+</span></code></pre>
+<h3 id="tips">TIPS</h3>
+<p>当前需要手动 PUSH oss Git repo. 
+需要自动化的话, 可参考 <a href="https://github.com/guxingke/oss/blob/master/sync.sh">sync</a></p>
+<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#bf616a;">nohup</span><span> ./sync.sh </span><span style="color:#d08770;">2</span><span>&gt;&amp;</span><span style="color:#d08770;">1 </span><span>&gt; sync.log &amp;
+</span></code></pre>
+<h2 id="end">END</h2>
+<p>贴图体验与之前使用七牛基本一致. 告一段落, 不用操心图床被封了. 😔 </p>
+<h2 id="ref">REF</h2>
+<ul>
+<li><a href="https://www.jianshu.com/p/33eeacac3344">github做Markdown图床</a></li>
+<li><a href="https://developer.qiniu.com/kodo/tools/1302/qshell">qshell</a></li>
+<li><a href="https://github.com/guxingke/markdown-image-alfred">markdown-image-alfred</a></li>
+</ul>
+
+    </main>
+
+        <footer>
+            <hr text="&copy; Copyright 2022" />
+            
+            <div class="footer-social-media">
+                <a onclick="toggle_prefers_color()">Toggle Theme</a>
+                
+                    <a href="https://github.com/guxingke" target="_blank">GitHub</a>
+                
+                    <a href="https://twitter.com/@guxingke" target="_blank">Twitter</a>
+                
+            </div>
+            
+        </footer>
+    </body>
+
+    
+        <script src="https://www.guxingke.com/js/script.js"/></script>
+    
+</html>

@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta content="IE=edge" http-equiv="X-UA-Compatible"/>
+        <meta content="text/html; charset=utf-8" http-equiv="content-type"/>
+        <meta content="width=device-width, initial-scale=1" name="viewport"/>
+
+        
+        <meta name="robots" content="index,follow">
+        <meta name="googlebot" content="index,follow">
+
+        <meta name="google" content="nositelinkssearchbox">
+        <meta name="google" content="notranslate">
+        
+
+        
+
+
+
+        
+        <link href="https://www.guxingke.com/style.css" rel="stylesheet"/>
+        
+        <title>
+    Make A Lisp[4]-条件,函数 - 
+</title>
+    </head>
+    <body>
+        <script>
+            function evaluate_prefers_color() {
+                if(localStorage.getItem('prefers-color') === 'dark') {
+                    document.body.classList.add('dark');
+                } else if(localStorage.getItem('prefers-color') === 'light') {
+                    document.body.classList.remove('dark');
+                } else if(window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    document.body.classList.add('dark');
+                }
+            }
+            evaluate_prefers_color();
+        </script>
+        
+    <main class="article-content">
+        <p><a href="..">..</a>/mal-step4-if-fn-do</p>
+        
+        <h1>Make A Lisp[4]-条件,函数</h1>
+        <p>Published: <time>2017-08-11</time></p>
+        
+            <div class="chips">
+                
+                    <span class="tag">pl</span>
+                
+                    <span class="tag">lisp</span>
+                
+                    <span class="tag">瞎折腾</span>
+                
+            </div>
+        
+        <hr />
+        <p>增加语法  if, fn, do
+增加 若干内置函数
+&lt; &gt; = list ... 
+有点语言的样子了, 有逻辑判断, 有函数. 可以实现 斐波那契数列 了</p>
+<span id="continue-reading"></span><h2 id="showtime">SHOWTIME</h2>
+<p><img src="https://raw.githubusercontent.com/guxingke/oss/master/blog/1502452330.png" alt="1502452330.png" /></p>
+<h2 id="if-fn-do">IF_FN_DO</h2>
+<p>REF: <a href="https://github.com/guxingke/mal/blob/master/process/guide.md#step4">step4</a>
+PR: <a href="https://github.com/guxingke/mal/pull/15">https://github.com/guxingke/mal/pull/15</a>
+实现搁置了一段时间, 主要是实现 prn 相关的函数调试半天没有得到预期结果, 最终参考了 kotlin 的实现. </p>
+<h2 id="jie-guo">结果</h2>
+<p><img src="https://raw.githubusercontent.com/guxingke/oss/master/blog/1502452363.png" alt="1502452363.png" /></p>
+<h2 id="use">USE</h2>
+<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#bf616a;">make</span><span> test^java2^step4
+</span><span style="color:#65737e;"># or 
+</span><span style="color:#bf616a;">tm</span><span> 4˙
+</span></code></pre>
+<h2 id="tips">TIPS</h2>
+<p>mal 基础功能实现完毕, 后续是一些优化, 加上 lisp 专有的一些特性的实现. </p>
+<h2 id="jie">结</h2>
+<p>实现 斐波那契数列 
+实现了函数,  实现了函数调用, 意味着 mal 已经具备一定的脚本能力了.</p>
+
+    </main>
+
+        <footer>
+            <hr text="&copy; Copyright 2022" />
+            
+            <div class="footer-social-media">
+                <a onclick="toggle_prefers_color()">Toggle Theme</a>
+                
+                    <a href="https://github.com/guxingke" target="_blank">GitHub</a>
+                
+                    <a href="https://twitter.com/@guxingke" target="_blank">Twitter</a>
+                
+            </div>
+            
+        </footer>
+    </body>
+
+    
+        <script src="https://www.guxingke.com/js/script.js"/></script>
+    
+</html>

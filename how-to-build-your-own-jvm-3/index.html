@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta content="IE=edge" http-equiv="X-UA-Compatible"/>
+        <meta content="text/html; charset=utf-8" http-equiv="content-type"/>
+        <meta content="width=device-width, initial-scale=1" name="viewport"/>
+
+        
+        <meta name="robots" content="index,follow">
+        <meta name="googlebot" content="index,follow">
+
+        <meta name="google" content="nositelinkssearchbox">
+        <meta name="google" content="notranslate">
+        
+
+        
+
+
+
+        
+        <link href="https://www.guxingke.com/style.css" rel="stylesheet"/>
+        
+        <title>
+    如何构建你自己的 JVM (2) HelloWorld - 
+</title>
+    </head>
+    <body>
+        <script>
+            function evaluate_prefers_color() {
+                if(localStorage.getItem('prefers-color') === 'dark') {
+                    document.body.classList.add('dark');
+                } else if(localStorage.getItem('prefers-color') === 'light') {
+                    document.body.classList.remove('dark');
+                } else if(window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    document.body.classList.add('dark');
+                }
+            }
+            evaluate_prefers_color();
+        </script>
+        
+    <main class="article-content">
+        <p><a href="..">..</a>/how-to-build-your-own-jvm-3</p>
+        
+        <h1>如何构建你自己的 JVM (2) HelloWorld</h1>
+        <p>Published: <time>2019-12-31</time></p>
+        
+            <div class="chips">
+                
+                    <span class="tag">jvm</span>
+                
+                    <span class="tag">howto</span>
+                
+            </div>
+        
+        <hr />
+        <blockquote>
+<p>凡是过往 皆为序章</p>
+</blockquote>
+<p>之前两篇算是开端, 对解释器有个基本印象, 但是如何与 Java 世界关联起来, 似乎又有些模糊, 此篇正式进入 Java 世界.<br />
+按照惯例, 自然是要写个 HelloWorld , 对于构建一个简单的 JVM 来说, HelloWorld 会是个样子呢? </p>
+<p>HelloWorld.java</p>
+<pre data-lang="java" style="background-color:#2b303b;color:#c0c5ce;" class="language-java "><code class="language-java" data-lang="java"><span>
+</span><span style="color:#b48ead;">public class </span><span style="color:#ebcb8b;">HelloWorld </span><span style="color:#eff1f5;">{
+</span><span style="color:#eff1f5;">
+</span><span style="color:#eff1f5;">  </span><span style="color:#b48ead;">public static void </span><span style="color:#8fa1b3;">main</span><span style="color:#eff1f5;">(</span><span style="color:#ebcb8b;">String</span><span style="color:#b48ead;">[] </span><span style="color:#bf616a;">args</span><span style="color:#eff1f5;">) {
+</span><span style="color:#eff1f5;">    </span><span style="color:#b48ead;">int</span><span style="color:#eff1f5;"> val </span><span>= </span><span style="color:#d08770;">1</span><span style="color:#eff1f5;">;
+</span><span style="color:#eff1f5;">    </span><span style="color:#ebcb8b;">System</span><span style="color:#eff1f5;">.out.</span><span style="color:#bf616a;">println</span><span style="color:#eff1f5;">(val);
+</span><span style="color:#eff1f5;">  }
+</span><span style="color:#eff1f5;">
+</span><span style="color:#eff1f5;">}
+</span><span>
+</span></code></pre>
+<p>案例如上图, 在控制台输出数字 1 . </p>
+<p>[[ 为什么输出 1, 按照惯例不是应该输出 Hello World ?  =&gt; 涉及到字符串的话, 程序就会复杂许多, 精简起见, 输出 1 已然足够 ]]</p>
+<h2 id="0x00-jie-shi-qi-fu-xi">0x00 解释器复习</h2>
+<p><img src="http://assets.processon.com/chart_image/5dfc461be4b0b6bdf104330a.png" alt="mini-jvm-1" /></p>
+<h2 id="0x01-zhi-ling-cong-na-li-lai">0x01 指令从哪里来?</h2>
+<p>若是写 JVM , 那指令自然指的是 字节码指令, 自然是从 class 文件中解析而来. </p>
+<h3 id="class-wen-jian">class 文件</h3>
+<p>如何生成 class 文件? 针对上面的案例, 可使用 javac 编译得到.<br />
+针对案例.</p>
+<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#bf616a;">javac</span><span> HelloWorld.java 
+</span></code></pre>
+<p>当前目录会生成 HelloWorld.class 文件. </p>
+<p>class 文件本质上是一个更为紧凑的源码, 以便于机器解析.</p>
+<p>如何查看 class 文件内容, 可以使用 JDK 自带工具 javap, javap 有很多选项, 暂时只关注 -c (对代码进行反汇编). </p>
+<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#bf616a;">javap -c</span><span> HelloWorld
+</span></code></pre>
+<p>输出如下, 行号是额外添加的.</p>
+<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span>
+</span><span style="color:#bf616a;">1</span><span>  Compiled from &quot;</span><span style="color:#a3be8c;">HelloWorld.java</span><span>&quot;
+</span><span style="color:#bf616a;">2</span><span>  public class HelloWorld {
+</span><span>3   public HelloWorld();
+</span><span>4     Code:
+</span><span>5        0: aload_0
+</span><span>6        1: invokespecial </span><span style="color:#65737e;">#1                  // Method java/lang/Object.&quot;&lt;init&gt;&quot;:()V
+</span><span>7        4: return
+</span><span>8
+</span><span>9   public static void main(java.lang.String</span><span style="color:#b48ead;">[]</span><span>);
+</span><span>10    Code:
+</span><span>11       0: iconst_1
+</span><span>12       1: istore_1
+</span><span>13       2: getstatic     </span><span style="color:#65737e;">#2                  // Field java/lang/System.out:Ljava/io/PrintStream;
+</span><span>14       5: iload_1
+</span><span>15       6: invokevirtual </span><span style="color:#65737e;">#3                  // Method java/io/PrintStream.println:(I)V
+</span><span>16       9: return
+</span><span>17 }
+</span><span>
+</span></code></pre>
+<p>连蒙带猜, 想必也能想到上方 11-16 行对应着源代码的 main 方法体内容.  其他内容可暂时忽略.</p>
+<h3 id="zhi-ling-jie-shi">指令解释</h3>
+<p>具体指令可参阅 <a href="https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-6.html#jvms-6.5">官方说明</a></p>
+<p>格式说明, [指令位置]: [指令] [指令参数]<br />
+e.g<br />
+0: iconst_1 , 指令位置 0, 指令为 iconst_1 , 无参数.</p>
+<p>案例涉及到的指令说明</p>
+<ul>
+<li>iconst_1: 将整数 1 push 到操作数栈顶. </li>
+<li>istore_1: 将操作数栈顶整数推出, 并存放到本地变量表 index 为 1 的位置. </li>
+<li>getstatic: 获取静态变量, 并 push 到操作数栈顶.</li>
+<li>iload_1: 取出本地变量表 index 为 1 的整数, 并 push 到操作数栈顶</li>
+<li>invokevirtual: 调用方法. </li>
+<li>return: 退出当前方法调用. </li>
+</ul>
+<h3 id="jie-xi-class-wen-jian-huo-qu-main-fang-fa-zi-jie-ma-zhi-ling">解析 class 文件, 获取 main 方法字节码指令</h3>
+<p>本质上是提供一个方法, 参数为 class 文件名, 结果为 解析后的指令集合.</p>
+<pre data-lang="java" style="background-color:#2b303b;color:#c0c5ce;" class="language-java "><code class="language-java" data-lang="java"><span>
+</span><span style="color:#b48ead;">public static </span><span style="color:#ebcb8b;">List</span><span>&lt;</span><span style="color:#ebcb8b;">Inst</span><span>&gt; </span><span style="color:#bf616a;">parseInst</span><span>(</span><span style="color:#ebcb8b;">String</span><span> classfilePath) {
+</span><span>  </span><span style="color:#65737e;">// 实现
+</span><span>} 
+</span><span>
+</span></code></pre>
+<h4 id="class-wen-jian-ge-shi">class 文件格式</h4>
+<p><a href="https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.1">官方 The ClassFile Structure</a><br />
+就案例而言, 了解即可.</p>
+<h4 id="shang-dai-ma">上代码</h4>
+<pre data-lang="java" style="background-color:#2b303b;color:#c0c5ce;" class="language-java "><code class="language-java" data-lang="java"><span style="color:#ebcb8b;">List</span><span>&lt;</span><span style="color:#ebcb8b;">Inst</span><span>&gt; insts = </span><span style="color:#b48ead;">new </span><span style="color:#ebcb8b;">ArrayList</span><span>&lt;&gt;();
+</span><span style="color:#ebcb8b;">Inst</span><span> inst = </span><span style="color:#d08770;">null</span><span>;
+</span><span style="color:#b48ead;">while </span><span>(len &gt; </span><span style="color:#d08770;">0</span><span>) {
+</span><span>	</span><span style="color:#b48ead;">int</span><span> code = is.</span><span style="color:#bf616a;">readUnsignedByte</span><span>();
+</span><span>	</span><span style="color:#b48ead;">switch </span><span>(code) {
+</span><span>		</span><span style="color:#b48ead;">case </span><span style="color:#d08770;">0x03</span><span>:
+</span><span>			inst = </span><span style="color:#b48ead;">new </span><span style="color:#ebcb8b;">IConst0</span><span>();
+</span><span>			</span><span style="color:#b48ead;">break</span><span>;
+</span><span>		</span><span style="color:#b48ead;">case </span><span style="color:#d08770;">0x04</span><span>:
+</span><span>			inst = </span><span style="color:#b48ead;">new </span><span style="color:#ebcb8b;">IConst1</span><span>();
+</span><span>			</span><span style="color:#b48ead;">break</span><span>;
+</span><span>		</span><span style="color:#b48ead;">case </span><span style="color:#d08770;">0x3c</span><span>:
+</span><span>			inst = </span><span style="color:#b48ead;">new </span><span style="color:#ebcb8b;">IStore1</span><span>();
+</span><span>			</span><span style="color:#b48ead;">break</span><span>;
+</span><span>		</span><span style="color:#b48ead;">case </span><span style="color:#d08770;">0x3d</span><span>:
+</span><span>			inst = </span><span style="color:#b48ead;">new </span><span style="color:#ebcb8b;">IStore2</span><span>();
+</span><span>			</span><span style="color:#b48ead;">break</span><span>;
+</span><span>		</span><span style="color:#b48ead;">case </span><span style="color:#d08770;">0x10</span><span>:
+</span><span>			inst = </span><span style="color:#b48ead;">new </span><span style="color:#ebcb8b;">Bipush</span><span>(is.</span><span style="color:#bf616a;">readByte</span><span>());
+</span><span>			</span><span style="color:#b48ead;">break</span><span>;
+</span><span>		</span><span style="color:#b48ead;">case </span><span style="color:#d08770;">0xa3</span><span>:
+</span><span>			inst = </span><span style="color:#b48ead;">new </span><span style="color:#ebcb8b;">IfIcmpGt</span><span>(is.</span><span style="color:#bf616a;">readShort</span><span>());
+</span><span>			</span><span style="color:#b48ead;">break</span><span>;
+</span><span>		</span><span style="color:#b48ead;">case </span><span style="color:#d08770;">0x60</span><span>:
+</span><span>			inst = </span><span style="color:#b48ead;">new </span><span style="color:#ebcb8b;">Iadd</span><span>();
+</span><span>			</span><span style="color:#b48ead;">break</span><span>;
+</span><span>		</span><span style="color:#b48ead;">case </span><span style="color:#d08770;">0x84</span><span>:
+</span><span>			inst = </span><span style="color:#b48ead;">new </span><span style="color:#ebcb8b;">Iinc</span><span>(is.</span><span style="color:#bf616a;">readUnsignedByte</span><span>(), is.</span><span style="color:#bf616a;">readByte</span><span>());
+</span><span>			</span><span style="color:#b48ead;">break</span><span>;
+</span><span>		</span><span style="color:#b48ead;">case </span><span style="color:#d08770;">0xa7</span><span>:
+</span><span>			inst = </span><span style="color:#b48ead;">new </span><span style="color:#ebcb8b;">Goto</span><span>(is.</span><span style="color:#bf616a;">readShort</span><span>());
+</span><span>			</span><span style="color:#b48ead;">break</span><span>;
+</span><span>		</span><span style="color:#b48ead;">case </span><span style="color:#d08770;">0x1b</span><span>:
+</span><span>			inst = </span><span style="color:#b48ead;">new </span><span style="color:#ebcb8b;">ILoad1</span><span>();
+</span><span>			</span><span style="color:#b48ead;">break</span><span>;
+</span><span>		</span><span style="color:#b48ead;">case </span><span style="color:#d08770;">0x1c</span><span>:
+</span><span>			inst = </span><span style="color:#b48ead;">new </span><span style="color:#ebcb8b;">ILoad2</span><span>();
+</span><span>			</span><span style="color:#b48ead;">break</span><span>;
+</span><span>		</span><span style="color:#b48ead;">case </span><span style="color:#d08770;">0xb1</span><span>:
+</span><span>			inst = </span><span style="color:#b48ead;">new </span><span style="color:#ebcb8b;">Return</span><span>();
+</span><span>			</span><span style="color:#b48ead;">break</span><span>;
+</span><span>		</span><span style="color:#b48ead;">case </span><span style="color:#d08770;">0xb2</span><span>:
+</span><span>			is.</span><span style="color:#bf616a;">readUnsignedShort</span><span>();
+</span><span>			inst = </span><span style="color:#b48ead;">new </span><span style="color:#ebcb8b;">Getstatic</span><span>();
+</span><span>			</span><span style="color:#b48ead;">break</span><span>;
+</span><span>		</span><span style="color:#b48ead;">case </span><span style="color:#d08770;">0xb6</span><span>:
+</span><span>			is.</span><span style="color:#bf616a;">readUnsignedShort</span><span>();
+</span><span>			inst = </span><span style="color:#b48ead;">new </span><span style="color:#ebcb8b;">Invokevirtual</span><span>();
+</span><span>			</span><span style="color:#b48ead;">break</span><span>;
+</span><span>		</span><span style="color:#b48ead;">default</span><span>:
+</span><span>			</span><span style="color:#b48ead;">throw new </span><span style="color:#ebcb8b;">UnsupportedOperationException</span><span>();
+</span><span>	}
+</span><span>	len -= inst.</span><span style="color:#bf616a;">offset</span><span>();
+</span><span>	insts.</span><span style="color:#bf616a;">add</span><span>(inst);
+</span><span>}
+</span><span>
+</span></code></pre>
+<p>核心代码如上, 主要是根据不同的情况解析出不同的指令. 并不复杂, 体力活. 对照着官方文档解析即可得到. </p>
+<h2 id="0x02-zhi-ling-you-liao-ran-hou-ni">0x02 指令有了, 然后呢</h2>
+<p>与解释器联动起来, 解释上一步解析得到的指令, 由于解释器上篇已实现, 此处就不过多解释, 核心代码如下. </p>
+<pre data-lang="java" style="background-color:#2b303b;color:#c0c5ce;" class="language-java "><code class="language-java" data-lang="java"><span>
+</span><span style="color:#ebcb8b;">List</span><span>&lt;</span><span style="color:#ebcb8b;">Inst</span><span>&gt; insts = </span><span style="color:#bf616a;">parseInst</span><span>(path + &quot;</span><span style="color:#a3be8c;">.class</span><span>&quot;);
+</span><span style="color:#65737e;">// 由于 jvm 指令有步长的概念, 此处需要转为map.
+</span><span style="color:#ebcb8b;">Map</span><span>&lt;</span><span style="color:#ebcb8b;">Integer</span><span>, </span><span style="color:#ebcb8b;">Inst</span><span>&gt; instructions = </span><span style="color:#bf616a;">genInstructions</span><span>(insts);
+</span><span>
+</span><span style="color:#65737e;">// 10 是临时写死, 实际应从 class 文件中解析得到.
+</span><span style="color:#ebcb8b;">Frame</span><span> frame = </span><span style="color:#b48ead;">new </span><span style="color:#ebcb8b;">Frame</span><span>(</span><span style="color:#d08770;">10</span><span>, </span><span style="color:#d08770;">10</span><span>);
+</span><span style="color:#b48ead;">while </span><span>(</span><span style="color:#d08770;">true</span><span>) {
+</span><span>  </span><span style="color:#b48ead;">int</span><span> pc = frame.pc;
+</span><span>  </span><span style="color:#ebcb8b;">Inst</span><span> inst = instructions.</span><span style="color:#bf616a;">get</span><span>(pc);
+</span><span>  </span><span style="color:#b48ead;">if </span><span>(inst == </span><span style="color:#d08770;">null</span><span>) {
+</span><span>    </span><span style="color:#b48ead;">break</span><span>;
+</span><span>  }
+</span><span>  inst.</span><span style="color:#bf616a;">execute</span><span>(frame);
+</span><span>  </span><span style="color:#b48ead;">if </span><span>(pc == frame.pc) {
+</span><span>    frame.pc += inst.</span><span style="color:#bf616a;">offset</span><span>();
+</span><span>  }
+</span><span>}
+</span><span>
+</span></code></pre>
+<p>与上篇提到的三个解释器大体相仿. </p>
+<h2 id="0x03-fang-fa-diao-yong-zen-yao-wan">0x03 方法调用怎么玩</h2>
+<p>简单来讲, 就是个交换的问题, 用入参(即当前操作数栈的对象), 换一个返回值(放到当前栈顶)或者副作用(比如输入信息).</p>
+<p>就案例来讲, 就是消耗掉栈的两个对象, 产生副作用(输出到控制台). </p>
+<p>更复杂方法调用, 核心依然是上方的交换, 暂不讨论. </p>
+<h3 id="invokevirtual-de-jian-dan-shi-xian">invokevirtual 的简单实现.</h3>
+<pre data-lang="java" style="background-color:#2b303b;color:#c0c5ce;" class="language-java "><code class="language-java" data-lang="java"><span>
+</span><span style="color:#b48ead;">public</span><span> void </span><span style="color:#bf616a;">execute</span><span>(</span><span style="color:#ebcb8b;">Frame</span><span> frame) {
+</span><span>	</span><span style="color:#ebcb8b;">Object</span><span> val = frame.operandStack.</span><span style="color:#bf616a;">pop</span><span>();  </span><span style="color:#65737e;">// 操作数栈顶, 即为要输出的值
+</span><span>	</span><span style="color:#ebcb8b;">Object</span><span> thisObj = frame.operandStack.</span><span style="color:#bf616a;">pop</span><span>(); </span><span style="color:#65737e;">// 其次是 System.out 这个静态变量, 暂时忽略实现. 
+</span><span>	</span><span style="color:#ebcb8b;">System</span><span>.out.</span><span style="color:#bf616a;">println</span><span>(val);  </span><span style="color:#65737e;">// 利用宿主 JVM 输出. 
+</span><span>}
+</span><span>
+</span></code></pre>
+<h2 id="0x04-hello-world-cheng-jiu-da-cheng">0x04 Hello World 成就达成</h2>
+<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span>
+</span><span style="color:#bf616a;">$</span><span> java</span><span style="color:#bf616a;"> -cp</span><span> target/interpreter-demo.jar com.gxk.demo.jvm.JvmDemo HelloWorld
+</span><span>=&gt; </span><span style="color:#d08770;">1
+</span><span>
+</span></code></pre>
+<h3 id="tu-jie-zhi-xing-liu-cheng">图解执行流程.</h3>
+<p><img src="https://raw.githubusercontent.com/guxingke/oss/master/blog/int-hw.gif" alt="int-hw" /></p>
+<h2 id="0x05-geng-fu-za-yi-dian-de-li-zi">0x05 更复杂一点的例子</h2>
+<p>求 1,2,3..100 的和, 并输出.</p>
+<p>Sum100.java</p>
+<pre data-lang="java" style="background-color:#2b303b;color:#c0c5ce;" class="language-java "><code class="language-java" data-lang="java"><span>
+</span><span style="color:#b48ead;">public class </span><span style="color:#ebcb8b;">Sum100 </span><span style="color:#eff1f5;">{
+</span><span style="color:#eff1f5;">  </span><span style="color:#b48ead;">public static void </span><span style="color:#8fa1b3;">main</span><span style="color:#eff1f5;">(</span><span style="color:#ebcb8b;">String</span><span style="color:#b48ead;">[] </span><span style="color:#bf616a;">args</span><span style="color:#eff1f5;">) {
+</span><span style="color:#eff1f5;">    </span><span style="color:#b48ead;">int</span><span style="color:#eff1f5;"> sum </span><span>= </span><span style="color:#d08770;">0</span><span style="color:#eff1f5;">;
+</span><span style="color:#eff1f5;">    </span><span style="color:#b48ead;">for </span><span style="color:#eff1f5;">(</span><span style="color:#b48ead;">int</span><span style="color:#eff1f5;"> i </span><span>= </span><span style="color:#d08770;">1</span><span style="color:#eff1f5;">; i </span><span>&lt;= </span><span style="color:#d08770;">100</span><span style="color:#eff1f5;">; i</span><span>++</span><span style="color:#eff1f5;">) {
+</span><span style="color:#eff1f5;">      sum </span><span>+=</span><span style="color:#eff1f5;"> i;
+</span><span style="color:#eff1f5;">    }
+</span><span style="color:#eff1f5;">    </span><span style="color:#ebcb8b;">System</span><span style="color:#eff1f5;">.out.</span><span style="color:#bf616a;">println</span><span style="color:#eff1f5;">(sum);
+</span><span style="color:#eff1f5;">  }
+</span><span style="color:#eff1f5;">}
+</span><span>
+</span></code></pre>
+<p>编译并解释</p>
+<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span>
+</span><span style="color:#bf616a;">$</span><span> javac Sum100.java
+</span><span>
+</span><span style="color:#bf616a;">$</span><span> java</span><span style="color:#bf616a;"> -cp</span><span> target/interpreter-demo.jar com.gxk.demo.jvm.JvmDemo Sum100
+</span><span>=&gt; </span><span style="color:#d08770;">5050
+</span><span>
+</span></code></pre>
+<h2 id="yuan-ma-ji-shi-yong">源码及使用</h2>
+<p>源码托管于 github, <a href="https://github.com/guxingke/demo/commit/6ecd2b6a0ff8288cb7b34cbc521a2d6f92580132">commit 传送门</a></p>
+<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span>
+</span><span style="color:#bf616a;">git</span><span> clone https://github.com/guxingke/demo.git
+</span><span style="color:#96b5b4;">cd</span><span> demo/interpreter-demo 
+</span><span style="color:#bf616a;">mvn</span><span> package
+</span><span>
+</span><span style="color:#65737e;"># HelloWorld
+</span><span style="color:#bf616a;">java</span><span> HelloWorld.java
+</span><span style="color:#bf616a;">java -cp</span><span> target/interpreter-demo.jar com.gxk.demo.jvm.JvmDemo Sum100
+</span><span>
+</span><span style="color:#bf616a;">javac</span><span> Sum100.java
+</span><span style="color:#bf616a;">java -cp</span><span> target/interpreter-demo.jar com.gxk.demo.jvm.JvmDemo Sum100
+</span><span>
+</span></code></pre>
+<h2 id="0x06-xiao-jie">0x06 小结</h2>
+<p>承接上篇, 使用单文件(300行代码)实现了一个简单的 JVM,  把 Java 世界 class 文件内的字节码指令解析出来, 并解释. 对于有兴趣入坑的同学来讲, 应该是个不错的案例.</p>
+<h2 id="0x07-yu-gao">0x07 预告</h2>
+<p>如果想了解更多, 可以关注 <a href="https://www.github.com/guxingke/mini-jvm">mini-jvm</a> 项目, 以上文提到的解释器为核心, Java 的一些语言特性基本实现.</p>
+<h2 id="0x08-faq">0x08 FAQ</h2>
+<p>系列还会有下一篇? 暂时不会有了, 解释器的核心已经就位, 一些语言特性就是逐步迭代了. </p>
+<h2 id="0x09-xiang-guan-lian-jie">0x09 相关链接</h2>
+<ul>
+<li><a href="https://www.guxingke.com/posts/how-to-build-your-own-jvm-1.html">如何构建你自己的 JVM (0) 概述</a></li>
+<li><a href="https://www.guxingke.com/posts/how-to-build-your-own-jvm-2.html">如何构建你自己的 JVM (1) 解释器</a></li>
+<li><a href="https://www.guxingke.com/posts/how-to-build-your-own-jvm-3.html">如何构建你自己的 JVM (2) Hello World</a></li>
+<li><a href="https://github.com/guxingke/demo">Demo 源码地址</a></li>
+<li><a href="https://github.com/guxingke/mini-jvm">使用 JDK8 实现 JVM</a></li>
+</ul>
+<h2 id="0x10-wei-ji">0x10 尾记</h2>
+<p>系列告一段落, 暂时不会更新了,个人杂记,难免会有疏漏错误, 如有兴趣, 有问题, 请反馈于我(评论,issue,邮件均欢迎). 再次感谢阅读. </p>
+
+    </main>
+
+        <footer>
+            <hr text="&copy; Copyright 2022" />
+            
+            <div class="footer-social-media">
+                <a onclick="toggle_prefers_color()">Toggle Theme</a>
+                
+                    <a href="https://github.com/guxingke" target="_blank">GitHub</a>
+                
+                    <a href="https://twitter.com/@guxingke" target="_blank">Twitter</a>
+                
+            </div>
+            
+        </footer>
+    </body>
+
+    
+        <script src="https://www.guxingke.com/js/script.js"/></script>
+    
+</html>

@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta content="IE=edge" http-equiv="X-UA-Compatible"/>
+        <meta content="text/html; charset=utf-8" http-equiv="content-type"/>
+        <meta content="width=device-width, initial-scale=1" name="viewport"/>
+
+        
+        <meta name="robots" content="index,follow">
+        <meta name="googlebot" content="index,follow">
+
+        <meta name="google" content="nositelinkssearchbox">
+        <meta name="google" content="notranslate">
+        
+
+        
+
+
+
+        
+        <link href="https://www.guxingke.com/style.css" rel="stylesheet"/>
+        
+        <title>
+    如何构建你自己的 JVM (1) 解释器 - 
+</title>
+    </head>
+    <body>
+        <script>
+            function evaluate_prefers_color() {
+                if(localStorage.getItem('prefers-color') === 'dark') {
+                    document.body.classList.add('dark');
+                } else if(localStorage.getItem('prefers-color') === 'light') {
+                    document.body.classList.remove('dark');
+                } else if(window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    document.body.classList.add('dark');
+                }
+            }
+            evaluate_prefers_color();
+        </script>
+        
+    <main class="article-content">
+        <p><a href="..">..</a>/how-to-build-your-own-jvm-2</p>
+        
+        <h1>如何构建你自己的 JVM (1) 解释器</h1>
+        <p>Published: <time>2019-12-22</time></p>
+        
+            <div class="chips">
+                
+                    <span class="tag">jvm</span>
+                
+                    <span class="tag">howto</span>
+                
+            </div>
+        
+        <hr />
+        <blockquote>
+<p>种一棵树最好的时间是十年前, 其次是现在. </p>
+</blockquote>
+<h2 id="0x00-ji-dian-gai-nian">0x00 几点概念</h2>
+<h3 id="jie-shi-qi">解释器</h3>
+<blockquote>
+<p><a href="https://zh.wikipedia.org/wiki/%E7%9B%B4%E8%AD%AF%E5%99%A8">解释器</a>, 是一种程序，能够把编程语言一行一行解释运行。解释器像是一位“中间人”，每次运行程序时都要先转成另一种语言再作运行，因此解释器的程序运行速度比较缓慢。它不会一次把整个程序翻译出来，而是每翻译一行程序叙述就立刻运行，然后再翻译下一行，再运行，如此不停地进行下去。</p>
+</blockquote>
+<h3 id="zhi-ling">指令</h3>
+<p>一些相关的概念, 汇编指令, JVM 字节码指令.<br />
+指令一般很简单, 描述了一个具体的操作. 比如</p>
+<p>汇编指令<br />
+mov &amp;ex, 1 =&gt; 将整数 1 放到寄存器 ex 里.</p>
+<p>字节码指令<br />
+bpush 1    =&gt; 将 byte 1 放到操作数栈顶.</p>
+<h3 id="ji-cun-qi">寄存器</h3>
+<p><a href="https://zh.wikipedia.org/wiki/%E5%AF%84%E5%AD%98%E5%99%A8">寄存器</a>, 
+简单来说寄存器就是个 Map. 可以根据寄存器地址(key)对其进行存取(value). 主要操作 get(key) , put(key,value)</p>
+<h3 id="zhan">栈</h3>
+<p>简单来讲, 后进先出, 只支持 push 和 pop 操作.<br />
+push : 将某个值放到栈的栈顶, 栈大小加 1.<br />
+pop  : 将栈的栈顶的值弄出来, 栈大小减 1. </p>
+<h3 id="ju-bu-bian-liang-biao">局部变量表</h3>
+<p>栈帧内部的数据结构, 是个数组. 通过数组位置访问, e.g array[0], array[1]. 换个角度来看, 其实可以认为是个特殊的寄存器. 只不过 key 是下标而已.</p>
+<h3 id="cao-zuo-shu-zhan">操作数栈</h3>
+<p>栈帧内部数据结构, 同栈. </p>
+<h2 id="0x01-ji-cun-qi-huan-shi-zhan">0x01 寄存器还是栈</h2>
+<blockquote>
+<p>脱离业务场景的技术设计都是耍流氓.     -- 尼古拉斯.赵四</p>
+</blockquote>
+<h3 id="chang-jing">场景</h3>
+<p>伪代码如下.</p>
+<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span>
+</span><span style="color:#bf616a;">int</span><span> a = 1 + 1; 
+</span><span style="color:#bf616a;">int</span><span> b = 2 + 2;
+</span><span style="color:#bf616a;">int</span><span> c = 0;
+</span><span style="color:#bf616a;">int</span><span> d = b - a;
+</span><span style="color:#bf616a;">int</span><span> d = d - c;
+</span><span style="color:#bf616a;">println</span><span>(d)
+</span></code></pre>
+<p>如果正确运行, 必然输出 2.<br />
+自动化的前提是能手动化. 所以人肉编译一下吧.</p>
+<h3 id="ji-cun-qi-fang-an">寄存器方案</h3>
+<p>生成指令格式, <code>inst [value|address]+</code><br />
+e.g</p>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>
+</span><span>mov &amp;0 1        =&gt; 把数值 1 放到寄存器 0 里    
+</span><span>add &amp;3 &amp;0 &amp;1 &amp;2 =&gt; 把 寄存器 0 ,寄存器 1,  寄存器 2 里的值相加, 并把结果放到 寄存器 3 里.     
+</span><span>sub &amp;3 &amp;0 &amp;1 &amp;2 =&gt; 把 寄存器 0 里的值 减去 寄存器 1,  寄存器 2 里的值, 并把结果放到 寄存器 3 里.     
+</span><span>println &amp;3      =&gt; 取出 寄存器 3 的值 并输出.     
+</span></code></pre>
+<p>生成的指令代码如下.  为方便理解, 双斜杠之后为注释. 表明操作之后寄存器或栈的状态</p>
+<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span>
+</span><span style="color:#bf616a;">mov </span><span>&amp;</span><span style="color:#bf616a;">0</span><span> 1        // {0:1}
+</span><span style="color:#bf616a;">mov </span><span>&amp;</span><span style="color:#bf616a;">1</span><span> 1        // {0:1, 1:1}
+</span><span style="color:#bf616a;">add </span><span>&amp;</span><span style="color:#bf616a;">2 </span><span>&amp;</span><span style="color:#bf616a;">0 </span><span>&amp;</span><span style="color:#bf616a;">1</span><span>    // {0:1, 1:1, 2:2}
+</span><span>
+</span><span style="color:#bf616a;">mov </span><span>&amp;</span><span style="color:#bf616a;">3</span><span> 2        // {0:1, 1:1, 2:2, 3:2}
+</span><span style="color:#bf616a;">mov </span><span>&amp;</span><span style="color:#bf616a;">4</span><span> 2        // {0:1, 1:1, 2:2, 3:2, 4:2}
+</span><span style="color:#bf616a;">add </span><span>&amp;</span><span style="color:#bf616a;">5 </span><span>&amp;</span><span style="color:#bf616a;">3 </span><span>&amp;</span><span style="color:#bf616a;">4</span><span>    // {0:1, 1:1, 2:2, 3:2, 4:2, 5:4}
+</span><span>
+</span><span style="color:#bf616a;">mov </span><span>&amp;</span><span style="color:#bf616a;">6</span><span> 0        // {0:1, 1:1, 2:2, 3:2, 4:2, 5:4, 6:0}
+</span><span>
+</span><span style="color:#bf616a;">sub </span><span>&amp;</span><span style="color:#bf616a;">7 </span><span>&amp;</span><span style="color:#bf616a;">5 </span><span>&amp;</span><span style="color:#bf616a;">2</span><span>    // {0:1, 1:1, 2:2, 3:2, 4:2, 5:4, 6:0, 7:2}
+</span><span>
+</span><span style="color:#bf616a;">sub </span><span>&amp;</span><span style="color:#bf616a;">8 </span><span>&amp;</span><span style="color:#bf616a;">7 </span><span>&amp;</span><span style="color:#bf616a;">6</span><span>    // {0:1, 1:1, 2:2, 3:2, 4:2, 5:4, 6:0, 7:2, 8:2} 
+</span><span>
+</span><span style="color:#bf616a;">println </span><span>&amp;</span><span style="color:#bf616a;">8</span><span>      // {0:1, 1:1, 2:2, 3:2, 4:2, 5:4, 6:0, 7:2, 8:2} 
+</span></code></pre>
+<h3 id="zhan-fang-an">栈方案</h3>
+<p>生成指令格式 <code>inst [value]{0,1}</code><br />
+e.g</p>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>
+</span><span>push 1   =&gt; 将数值 1 推到栈顶. (..) -&gt; (..,1)  
+</span><span>add      =&gt; 将栈顶的两个数值相加, 并将结果放到栈顶. (..,v1,v2) -&gt; (..,v1+v2)  
+</span><span>sub      =&gt; 假设栈顶值为v2, (..,v1,v2) -&gt; (..,v1-v2)  
+</span><span>swap     =&gt; 交换栈顶两个元素 (v1,v2) -&gt; (v2,v1)  
+</span><span>swap1    =&gt; 交换栈上第二,第三位置 (v1,v2,x) -&gt; (v2,v1,x)  
+</span><span>println  =&gt; 栈顶数值出站, 并将结果输出. (..,1) -&gt; (..)  
+</span></code></pre>
+<p>生成的指令代码如下.  为方便理解, 双斜杠之后为注释. 表明操作之后寄存器或栈的状态</p>
+<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span>
+</span><span style="color:#bf616a;">push</span><span> 1  // (1)
+</span><span style="color:#bf616a;">push</span><span> 1  // (1, 1)
+</span><span style="color:#bf616a;">add</span><span>     // (2)
+</span><span>
+</span><span style="color:#bf616a;">push</span><span> 2  // (2, 2)
+</span><span style="color:#bf616a;">push</span><span> 2  // (2, 2, 2)
+</span><span style="color:#bf616a;">add</span><span>     // (2, 4)
+</span><span>
+</span><span style="color:#bf616a;">push</span><span> 0  // (2, 4, 0)
+</span><span>
+</span><span style="color:#bf616a;">swap</span><span>    // (2, 0, 4)
+</span><span style="color:#bf616a;">swap1</span><span>   // (0, 2, 4)
+</span><span style="color:#bf616a;">swap</span><span>    // (0, 4, 2)
+</span><span style="color:#bf616a;">sub</span><span>     // (0, 2)
+</span><span>
+</span><span style="color:#bf616a;">swap</span><span>    // (2, 0)
+</span><span style="color:#bf616a;">sub</span><span>     // (2)
+</span><span>
+</span><span style="color:#bf616a;">println</span><span>  // ()
+</span></code></pre>
+<h3 id="hun-he-fang-an-jie-he-ji-cun-qi-he-zhan-de-fang-an-ji-jvm-de-fang-an">混合方案, 结合寄存器和栈的方案(即 JVM 的方案)</h3>
+<p>e.g:</p>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>
+</span><span>load   =&gt; 从寄存器中取值并 push 到操作数栈中.  
+</span><span>store  =&gt; 操作数栈顶数值出栈, 并存放到寄存器中.  
+</span></code></pre>
+<p>生成的指令代码如下.  为方便理解, 双斜杠之后为注释. 表明操作之后寄存器或栈的状态</p>
+<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span>
+</span><span style="color:#bf616a;">push</span><span> 1    // (1)     </span><span style="color:#bf616a;">{</span><span>}
+</span><span style="color:#bf616a;">push</span><span> 1    // (1, 1)  </span><span style="color:#bf616a;">{</span><span>}
+</span><span style="color:#bf616a;">add</span><span>       // (2)     </span><span style="color:#bf616a;">{</span><span>}
+</span><span style="color:#bf616a;">store </span><span>&amp;</span><span style="color:#bf616a;">0</span><span>  // ()      </span><span style="color:#bf616a;">{0:2</span><span>}
+</span><span>
+</span><span style="color:#bf616a;">push</span><span> 2    // (2)     </span><span style="color:#bf616a;">{0:2</span><span>}
+</span><span style="color:#bf616a;">push</span><span> 2    // (2, 2)  </span><span style="color:#bf616a;">{0:2</span><span>}
+</span><span style="color:#bf616a;">add</span><span>       // (4)     </span><span style="color:#bf616a;">{0:2</span><span>}
+</span><span style="color:#bf616a;">store </span><span>&amp;</span><span style="color:#bf616a;">1</span><span>  // ()      </span><span style="color:#bf616a;">{0:2,</span><span> 1:4}
+</span><span>
+</span><span style="color:#bf616a;">push</span><span> 0    // (0)     </span><span style="color:#bf616a;">{0:2,</span><span> 1:4}
+</span><span style="color:#bf616a;">store </span><span>&amp;</span><span style="color:#bf616a;">2</span><span>  // ()      </span><span style="color:#bf616a;">{0:2,</span><span> 1:4, 2:0}
+</span><span>
+</span><span style="color:#bf616a;">load </span><span>&amp;</span><span style="color:#bf616a;">1</span><span>   // (4)     </span><span style="color:#bf616a;">{0:2,</span><span> 1:4, 2:0}
+</span><span style="color:#bf616a;">load </span><span>&amp;</span><span style="color:#bf616a;">0</span><span>   // (4, 2)  </span><span style="color:#bf616a;">{0:2,</span><span> 1:4, 2:0}
+</span><span style="color:#bf616a;">sub</span><span>       // (2)     </span><span style="color:#bf616a;">{0:2,</span><span> 1:4, 2:0}
+</span><span style="color:#bf616a;">store </span><span>&amp;</span><span style="color:#bf616a;">3</span><span>  // ()      </span><span style="color:#bf616a;">{0:2,</span><span> 1:4, 2:0, 3:2}
+</span><span>
+</span><span style="color:#bf616a;">load </span><span>&amp;</span><span style="color:#bf616a;">3</span><span>   // (2)     </span><span style="color:#bf616a;">{0:2,</span><span> 1:4, 2:2, 3:2}
+</span><span style="color:#bf616a;">load </span><span>&amp;</span><span style="color:#bf616a;">2</span><span>   // (2, 0)  </span><span style="color:#bf616a;">{0:2,</span><span> 1:4, 2:2, 3:2}
+</span><span style="color:#bf616a;">sub</span><span>       // (2)     </span><span style="color:#bf616a;">{0:2,</span><span> 1:4, 2:2, 3:2}
+</span><span style="color:#bf616a;">store </span><span>$</span><span style="color:#bf616a;">4</span><span>  // ()      </span><span style="color:#bf616a;">{0:2,</span><span> 1:4, 2:2, 3:2, 4:2}
+</span><span>
+</span><span style="color:#bf616a;">load </span><span>$</span><span style="color:#bf616a;">4</span><span>   // (2)     </span><span style="color:#bf616a;">{0:2,</span><span> 1:4, 2:2, 3:2, 4:2}
+</span><span style="color:#bf616a;">println</span><span>   // ()      </span><span style="color:#bf616a;">{0:2,</span><span> 1:4, 2:2, 3:2, 4:2}
+</span></code></pre>
+<h3 id="jian-dan-bi-jiao">简单比较</h3>
+<p>简单场景下, 三种方案均可满足需求.<br />
+其中寄存器方案对应这计算机物理实现. CPU 的处理便是基于寄存器的. 优点性能高, 数据的搬运次数少, 缺点指令复杂.<br />
+纯粹基于栈的方案, 貌似没有, 因为只有 push pop 两种操作, 在局部变量较多的情况下, 数据需要频繁搬运. 优点是指令简单. 方便移植.<br />
+混合方案, 集两家之长, 在移植性和效率上的折中方案.</p>
+<h2 id="0x02-jie-shi-qi-he-xin">0x02 解释器核心</h2>
+<p>如上篇预告. 解释器的核心是一个循环.</p>
+<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span>
+</span><span style="color:#b48ead;">do </span><span>{
+</span><span>    </span><span style="color:#bf616a;">获取下一个指令
+</span><span>    </span><span style="color:#bf616a;">解释指令
+</span><span>} while (还有指令);
+</span><span>
+</span></code></pre>
+<p>架构图如下<br />
+<img src="http://assets.processon.com/chart_image/5dfc461be4b0b6bdf104330a.png" alt="mini-jvm-1" /></p>
+<h2 id="0x03-jian-dan-dai-ma-shi-xian">0x03 简单代码实现</h2>
+<p><a href="https://github.com/guxingke/demo/blob/c3d7156443c94bb2b770c821855f98b28cb101a9/interpreter-demo/README.md">INTERPRETER-DEMO</a></p>
+<h3 id="ji-cun-qi-1">寄存器</h3>
+<pre data-lang="java" style="background-color:#2b303b;color:#c0c5ce;" class="language-java "><code class="language-java" data-lang="java"><span>
+</span><span style="color:#65737e;">// 核心循环
+</span><span>  </span><span style="color:#b48ead;">public</span><span> void </span><span style="color:#bf616a;">run</span><span>() {
+</span><span>
+</span><span>    </span><span style="color:#ebcb8b;">List</span><span>&lt;</span><span style="color:#ebcb8b;">Inst</span><span>&gt; insts = </span><span style="color:#bf616a;">genInsts</span><span>();
+</span><span>
+</span><span>    </span><span style="color:#b48ead;">int</span><span> size = insts.</span><span style="color:#bf616a;">size</span><span>();
+</span><span>    </span><span style="color:#b48ead;">int</span><span> pc = </span><span style="color:#d08770;">0</span><span>;
+</span><span>
+</span><span>    </span><span style="color:#b48ead;">while </span><span>(pc &lt; size) {
+</span><span>      </span><span style="color:#ebcb8b;">Inst</span><span> inst = insts.</span><span style="color:#bf616a;">get</span><span>(pc);
+</span><span>      inst.</span><span style="color:#bf616a;">execute</span><span>();
+</span><span>      pc++;
+</span><span>    }
+</span><span>  }
+</span><span>
+</span><span style="color:#65737e;">// Add 指令实现
+</span><span style="color:#b48ead;">class </span><span style="color:#ebcb8b;">AddInst </span><span style="color:#b48ead;">implements </span><span style="color:#a3be8c;">Inst </span><span style="color:#eff1f5;">{
+</span><span style="color:#eff1f5;">  </span><span style="color:#b48ead;">public final </span><span style="color:#ebcb8b;">Integer </span><span style="color:#eff1f5;">targetAddress;
+</span><span style="color:#eff1f5;">  </span><span style="color:#b48ead;">public final </span><span style="color:#ebcb8b;">Integer</span><span style="color:#b48ead;">[] </span><span style="color:#eff1f5;">sourceAddresses;
+</span><span style="color:#eff1f5;">
+</span><span style="color:#eff1f5;">  </span><span style="color:#8fa1b3;">AddInst</span><span style="color:#eff1f5;">(</span><span style="color:#ebcb8b;">Integer </span><span style="color:#bf616a;">targetAddress</span><span style="color:#eff1f5;">, </span><span style="color:#ebcb8b;">Integer</span><span>... </span><span style="color:#bf616a;">sourceAddresses</span><span style="color:#eff1f5;">) {
+</span><span style="color:#eff1f5;">    </span><span style="color:#bf616a;">this</span><span style="color:#eff1f5;">.targetAddress </span><span>=</span><span style="color:#eff1f5;"> targetAddress;
+</span><span style="color:#eff1f5;">    </span><span style="color:#bf616a;">this</span><span style="color:#eff1f5;">.sourceAddresses </span><span>=</span><span style="color:#eff1f5;"> sourceAddresses;
+</span><span style="color:#eff1f5;">  }
+</span><span style="color:#eff1f5;">
+</span><span style="color:#eff1f5;">  @</span><span style="color:#bf616a;">Override
+</span><span style="color:#eff1f5;">  </span><span style="color:#b48ead;">public void </span><span style="color:#8fa1b3;">execute</span><span style="color:#eff1f5;">() {
+</span><span style="color:#eff1f5;">    </span><span style="color:#b48ead;">int</span><span style="color:#eff1f5;"> sum </span><span>= </span><span style="color:#d08770;">0</span><span style="color:#eff1f5;">;
+</span><span style="color:#eff1f5;">    </span><span style="color:#b48ead;">for </span><span style="color:#eff1f5;">(</span><span style="color:#ebcb8b;">Integer</span><span style="color:#eff1f5;"> sourceAddress </span><span>:</span><span style="color:#eff1f5;"> sourceAddresses) {
+</span><span style="color:#eff1f5;">      sum </span><span>+= </span><span style="color:#ebcb8b;">RegisterDemo</span><span style="color:#eff1f5;">.</span><span style="color:#d08770;">REGISTER</span><span style="color:#eff1f5;">.</span><span style="color:#bf616a;">get</span><span style="color:#eff1f5;">(sourceAddress);
+</span><span style="color:#eff1f5;">    }
+</span><span style="color:#eff1f5;">    </span><span style="color:#ebcb8b;">RegisterDemo</span><span style="color:#eff1f5;">.</span><span style="color:#d08770;">REGISTER</span><span style="color:#eff1f5;">.</span><span style="color:#bf616a;">put</span><span style="color:#eff1f5;">(targetAddress, sum);
+</span><span style="color:#eff1f5;">  }
+</span><span style="color:#eff1f5;">}
+</span><span>
+</span></code></pre>
+<p>代码地址: <a href="https://github.com/guxingke/demo/blob/c3d7156443c94bb2b770c821855f98b28cb101a9/interpreter-demo/src/main/java/com/gxk/demo/register/RegisterDemo.java">寄存器 DEMO</a></p>
+<h3 id="zhan-1">栈</h3>
+<pre data-lang="java" style="background-color:#2b303b;color:#c0c5ce;" class="language-java "><code class="language-java" data-lang="java"><span>
+</span><span style="color:#65737e;">// 核心循环
+</span><span>  </span><span style="color:#b48ead;">public</span><span> void </span><span style="color:#bf616a;">run</span><span>() {
+</span><span>
+</span><span>    </span><span style="color:#ebcb8b;">List</span><span>&lt;</span><span style="color:#ebcb8b;">Inst</span><span>&gt; insts = </span><span style="color:#bf616a;">genInsts</span><span>();
+</span><span>
+</span><span>    </span><span style="color:#b48ead;">int</span><span> size = insts.</span><span style="color:#bf616a;">size</span><span>();
+</span><span>    </span><span style="color:#b48ead;">int</span><span> pc = </span><span style="color:#d08770;">0</span><span>;
+</span><span>
+</span><span>    </span><span style="color:#b48ead;">while </span><span>(pc &lt; size) {
+</span><span>      </span><span style="color:#ebcb8b;">Inst</span><span> inst = insts.</span><span style="color:#bf616a;">get</span><span>(pc);
+</span><span>      inst.</span><span style="color:#bf616a;">execute</span><span>();
+</span><span>      pc++;
+</span><span>    }
+</span><span>  }
+</span><span>
+</span><span style="color:#65737e;">// Add 指令实现
+</span><span style="color:#b48ead;">class </span><span style="color:#ebcb8b;">AddInst </span><span style="color:#b48ead;">implements </span><span style="color:#a3be8c;">Inst </span><span style="color:#eff1f5;">{
+</span><span style="color:#eff1f5;">
+</span><span style="color:#eff1f5;">  @</span><span style="color:#bf616a;">Override
+</span><span style="color:#eff1f5;">  </span><span style="color:#b48ead;">public void </span><span style="color:#8fa1b3;">execute</span><span style="color:#eff1f5;">() {
+</span><span style="color:#eff1f5;">    </span><span style="color:#ebcb8b;">Integer</span><span style="color:#eff1f5;"> v2 </span><span>= </span><span style="color:#ebcb8b;">StackDemo</span><span style="color:#eff1f5;">.</span><span style="color:#d08770;">STACK</span><span style="color:#eff1f5;">.</span><span style="color:#bf616a;">pop</span><span style="color:#eff1f5;">();
+</span><span style="color:#eff1f5;">    </span><span style="color:#ebcb8b;">Integer</span><span style="color:#eff1f5;"> v1 </span><span>= </span><span style="color:#ebcb8b;">StackDemo</span><span style="color:#eff1f5;">.</span><span style="color:#d08770;">STACK</span><span style="color:#eff1f5;">.</span><span style="color:#bf616a;">pop</span><span style="color:#eff1f5;">();
+</span><span style="color:#eff1f5;">    </span><span style="color:#ebcb8b;">StackDemo</span><span style="color:#eff1f5;">.</span><span style="color:#d08770;">STACK</span><span style="color:#eff1f5;">.</span><span style="color:#bf616a;">push</span><span style="color:#eff1f5;">(v1 </span><span>+</span><span style="color:#eff1f5;"> v2);
+</span><span style="color:#eff1f5;">  }
+</span><span style="color:#eff1f5;">}
+</span><span>
+</span></code></pre>
+<p>地址: <a href="https://github.com/guxingke/demo/blob/c3d7156443c94bb2b770c821855f98b28cb101a9/interpreter-demo/src/main/java/com/gxk/demo/stack/StackDemo.java">栈 DEMO</a></p>
+<h3 id="hun-he">混合</h3>
+<pre data-lang="java" style="background-color:#2b303b;color:#c0c5ce;" class="language-java "><code class="language-java" data-lang="java"><span>
+</span><span style="color:#65737e;">// 核心循环
+</span><span>  </span><span style="color:#b48ead;">public</span><span> void </span><span style="color:#bf616a;">run</span><span>() {
+</span><span>
+</span><span>    </span><span style="color:#ebcb8b;">List</span><span>&lt;</span><span style="color:#ebcb8b;">Inst</span><span>&gt; insts = </span><span style="color:#bf616a;">genInsts</span><span>();
+</span><span>
+</span><span>    </span><span style="color:#b48ead;">int</span><span> size = insts.</span><span style="color:#bf616a;">size</span><span>();
+</span><span>    </span><span style="color:#b48ead;">int</span><span> pc = </span><span style="color:#d08770;">0</span><span>;
+</span><span>
+</span><span>    </span><span style="color:#b48ead;">while </span><span>(pc &lt; size) {
+</span><span>      </span><span style="color:#ebcb8b;">Inst</span><span> inst = insts.</span><span style="color:#bf616a;">get</span><span>(pc);
+</span><span>      inst.</span><span style="color:#bf616a;">execute</span><span>();
+</span><span>      pc++;
+</span><span>    }
+</span><span>  }
+</span><span>
+</span><span style="color:#65737e;">// Add 指令实现
+</span><span style="color:#b48ead;">class </span><span style="color:#ebcb8b;">AddInst </span><span style="color:#b48ead;">implements </span><span style="color:#a3be8c;">Inst </span><span style="color:#eff1f5;">{
+</span><span style="color:#eff1f5;">
+</span><span style="color:#eff1f5;">  @</span><span style="color:#bf616a;">Override
+</span><span style="color:#eff1f5;">  </span><span style="color:#b48ead;">public void </span><span style="color:#8fa1b3;">execute</span><span style="color:#eff1f5;">() {
+</span><span style="color:#eff1f5;">    </span><span style="color:#ebcb8b;">Integer</span><span style="color:#eff1f5;"> v2 </span><span>= </span><span style="color:#ebcb8b;">HybridDemo</span><span style="color:#eff1f5;">.</span><span style="color:#d08770;">STACK</span><span style="color:#eff1f5;">.</span><span style="color:#bf616a;">pop</span><span style="color:#eff1f5;">();
+</span><span style="color:#eff1f5;">    </span><span style="color:#ebcb8b;">Integer</span><span style="color:#eff1f5;"> v1 </span><span>= </span><span style="color:#ebcb8b;">HybridDemo</span><span style="color:#eff1f5;">.</span><span style="color:#d08770;">STACK</span><span style="color:#eff1f5;">.</span><span style="color:#bf616a;">pop</span><span style="color:#eff1f5;">();
+</span><span style="color:#eff1f5;">    </span><span style="color:#ebcb8b;">HybridDemo</span><span style="color:#eff1f5;">.</span><span style="color:#d08770;">STACK</span><span style="color:#eff1f5;">.</span><span style="color:#bf616a;">push</span><span style="color:#eff1f5;">(v1 </span><span>+</span><span style="color:#eff1f5;"> v2);
+</span><span style="color:#eff1f5;">  }
+</span><span style="color:#eff1f5;">}
+</span><span>
+</span></code></pre>
+<p>地址: <a href="https://github.com/guxingke/demo/blob/c3d7156443c94bb2b770c821855f98b28cb101a9/interpreter-demo/src/main/java/com/gxk/demo/hybrid/HybridDemo.java">混合 DEMO</a></p>
+<h3 id="guan-yu-shang-fang-dai-ma">关于上方代码</h3>
+<p>针对具体场景实现, 刚好能用. 三个方案, 每个方案均不超过 100 行代码. 回上篇问题, 实现一个简单的解释器, 10 分钟够不够?<br />
+自然是够的, 有兴趣不妨试着写一下.</p>
+<h2 id="0x04-xiao-jie">0x04 小结</h2>
+<p>本文讨论了解释器实现的三种方案, 并就简单的案例分别实现了相应的解释器.<br />
+mini-jvm 便是从这简单的核心中慢慢扩展而来. 
+由于 JVM 选择的是混合方案, 后续的重点就只会在混合方案上了.</p>
+<p>!!! 解释器的核心实现尤为重要, 如果此文并没有并没有让读者理解, 一定是文章的问题, 欢迎提出你的问题, 已迭代此文. </p>
+<h2 id="0x05-yu-gao">0x05 预告</h2>
+<ol>
+<li>当前的解释器跟 javac 编译之后的 class 一毛钱的关系都没有, 该有点关系了.</li>
+</ol>
+<h2 id="0x06-faq">0x06 FAQ</h2>
+<ol>
+<li>为什么先从解释器说起, 按照惯例, 不应该先说说 classfile 解析吗?
+Classfile 解析并无任何难度, 体力活, 解析完的数据是为解释器服务的. 本质上是个静态数据提供者. 非核心逻辑. 故而解释器在前. </li>
+</ol>
+
+    </main>
+
+        <footer>
+            <hr text="&copy; Copyright 2022" />
+            
+            <div class="footer-social-media">
+                <a onclick="toggle_prefers_color()">Toggle Theme</a>
+                
+                    <a href="https://github.com/guxingke" target="_blank">GitHub</a>
+                
+                    <a href="https://twitter.com/@guxingke" target="_blank">Twitter</a>
+                
+            </div>
+            
+        </footer>
+    </body>
+
+    
+        <script src="https://www.guxingke.com/js/script.js"/></script>
+    
+</html>

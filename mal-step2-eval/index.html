@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta content="IE=edge" http-equiv="X-UA-Compatible"/>
+        <meta content="text/html; charset=utf-8" http-equiv="content-type"/>
+        <meta content="width=device-width, initial-scale=1" name="viewport"/>
+
+        
+        <meta name="robots" content="index,follow">
+        <meta name="googlebot" content="index,follow">
+
+        <meta name="google" content="nositelinkssearchbox">
+        <meta name="google" content="notranslate">
+        
+
+        
+
+
+
+        
+        <link href="https://www.guxingke.com/style.css" rel="stylesheet"/>
+        
+        <title>
+    Make A Lisp[2]-求值 - 
+</title>
+    </head>
+    <body>
+        <script>
+            function evaluate_prefers_color() {
+                if(localStorage.getItem('prefers-color') === 'dark') {
+                    document.body.classList.add('dark');
+                } else if(localStorage.getItem('prefers-color') === 'light') {
+                    document.body.classList.remove('dark');
+                } else if(window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    document.body.classList.add('dark');
+                }
+            }
+            evaluate_prefers_color();
+        </script>
+        
+    <main class="article-content">
+        <p><a href="..">..</a>/mal-step2-eval</p>
+        
+        <h1>Make A Lisp[2]-求值</h1>
+        <p>Published: <time>2017-07-22</time></p>
+        
+            <div class="chips">
+                
+                    <span class="tag">pl</span>
+                
+                    <span class="tag">lisp</span>
+                
+                    <span class="tag">瞎折腾</span>
+                
+            </div>
+        
+        <hr />
+        <p>实现一个简单的四则运算计算器.</p>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>(+ 1 (* 2 3)  =&gt; 7
+</span><span>(+ 1 2 3 4) =&gt; 10
+</span></code></pre>
+<span id="continue-reading"></span><h2 id="eval">EVAL</h2>
+<p>REF: <a href="https://github.com/guxingke/mal/blob/feature/java8_temp/process/guide.md#step2">step2</a>
+按步骤实现即可. 
+无难点.
+PR: <a href="https://github.com/guxingke/mal/pull/13">https://github.com/guxingke/mal/pull/13</a></p>
+<h2 id="jie-guo">结果</h2>
+<p><img src="https://raw.githubusercontent.com/guxingke/oss/master/blog/1500641247.png" alt="1500641247.png" />
+<img src="https://raw.githubusercontent.com/guxingke/oss/master/blog/1500641141.png" alt="1500641141.png" /></p>
+<h2 id="use">USE</h2>
+<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#bf616a;">make</span><span> test^java2^step2
+</span><span style="color:#65737e;"># or 
+</span><span style="color:#bf616a;">tm</span><span> 2
+</span></code></pre>
+<h2 id="tips">TIPS</h2>
+<p>增加了一个脚本, 用来开始一个新的 step</p>
+<h2 id="jie">结</h2>
+<p>解释器至此可以说已经完成了30%了. 
+下一步的目标是:
+实现 斐波那契数列</p>
+
+    </main>
+
+        <footer>
+            <hr text="&copy; Copyright 2022" />
+            
+            <div class="footer-social-media">
+                <a onclick="toggle_prefers_color()">Toggle Theme</a>
+                
+                    <a href="https://github.com/guxingke" target="_blank">GitHub</a>
+                
+                    <a href="https://twitter.com/@guxingke" target="_blank">Twitter</a>
+                
+            </div>
+            
+        </footer>
+    </body>
+
+    
+        <script src="https://www.guxingke.com/js/script.js"/></script>
+    
+</html>

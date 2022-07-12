@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta content="IE=edge" http-equiv="X-UA-Compatible"/>
+        <meta content="text/html; charset=utf-8" http-equiv="content-type"/>
+        <meta content="width=device-width, initial-scale=1" name="viewport"/>
+
+        
+        <meta name="robots" content="index,follow">
+        <meta name="googlebot" content="index,follow">
+
+        <meta name="google" content="nositelinkssearchbox">
+        <meta name="google" content="notranslate">
+        
+
+        
+
+
+
+        
+        <link href="https://www.guxingke.com/style.css" rel="stylesheet"/>
+        
+        <title>
+    重构-除恶务尽 - 
+</title>
+    </head>
+    <body>
+        <script>
+            function evaluate_prefers_color() {
+                if(localStorage.getItem('prefers-color') === 'dark') {
+                    document.body.classList.add('dark');
+                } else if(localStorage.getItem('prefers-color') === 'light') {
+                    document.body.classList.remove('dark');
+                } else if(window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    document.body.classList.add('dark');
+                }
+            }
+            evaluate_prefers_color();
+        </script>
+        
+    <main class="article-content">
+        <p><a href="..">..</a>/refactory-with-no-tail</p>
+        
+        <h1>重构-除恶务尽</h1>
+        <p>Published: <time>2018-11-02</time></p>
+        
+            <div class="chips">
+                
+                    <span class="tag">arch</span>
+                
+                    <span class="tag">refactory</span>
+                
+            </div>
+        
+        <hr />
+        <blockquote>
+<p>行百里者半九十</p>
+</blockquote>
+<p>近日,  考虑逐步下线堆糖最后一个 Python 业务项目, 发现了诸多由于系统重构遗留的技术债, 尤其严重的是 RPC 调用.</p>
+<ul>
+<li>三代 RPC 技术共存, DBOSS(第一代), KARMA(自研二代), Duboo(最新)</li>
+<li>同一个业务, 多个 RPC 技术提供服务</li>
+</ul>
+<h2 id="dang-xia-zen-yao-ban">当下怎么办</h2>
+<p>含泪改了</p>
+<h2 id="hou-xu-zen-yao-ban">后续怎么办</h2>
+<p>除恶务尽, 技术重构不要留尾巴, 一点妥协会增加巨大的后续维护成本. </p>
+<h2 id="end">END</h2>
+<p>小团队务必保证技术栈统一, 引入新技术务必再三考量维护成本.</p>
+
+    </main>
+
+        <footer>
+            <hr text="&copy; Copyright 2022" />
+            
+            <div class="footer-social-media">
+                <a onclick="toggle_prefers_color()">Toggle Theme</a>
+                
+                    <a href="https://github.com/guxingke" target="_blank">GitHub</a>
+                
+                    <a href="https://twitter.com/@guxingke" target="_blank">Twitter</a>
+                
+            </div>
+            
+        </footer>
+    </body>
+
+    
+        <script src="https://www.guxingke.com/js/script.js"/></script>
+    
+</html>

@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta content="IE=edge" http-equiv="X-UA-Compatible"/>
+        <meta content="text/html; charset=utf-8" http-equiv="content-type"/>
+        <meta content="width=device-width, initial-scale=1" name="viewport"/>
+
+        
+        <meta name="robots" content="index,follow">
+        <meta name="googlebot" content="index,follow">
+
+        <meta name="google" content="nositelinkssearchbox">
+        <meta name="google" content="notranslate">
+        
+
+        
+
+
+
+        
+        <link href="https://www.guxingke.com/style.css" rel="stylesheet"/>
+        
+        <title>
+    配置 SpringBoot, 从日志配置说起 - 
+</title>
+    </head>
+    <body>
+        <script>
+            function evaluate_prefers_color() {
+                if(localStorage.getItem('prefers-color') === 'dark') {
+                    document.body.classList.add('dark');
+                } else if(localStorage.getItem('prefers-color') === 'light') {
+                    document.body.classList.remove('dark');
+                } else if(window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    document.body.classList.add('dark');
+                }
+            }
+            evaluate_prefers_color();
+        </script>
+        
+    <main class="article-content">
+        <p><a href="..">..</a>/beginer-for-sb-logging-system-configuration</p>
+        
+        <h1>配置 SpringBoot, 从日志配置说起</h1>
+        <p>Published: <time>2018-12-17</time></p>
+        
+            <div class="chips">
+                
+                    <span class="tag">spring</span>
+                
+                    <span class="tag">springboot</span>
+                
+                    <span class="tag">config</span>
+                
+            </div>
+        
+        <hr />
+        <blockquote>
+<p>应用可以死, 日志必须活.</p>
+</blockquote>
+<p>大小系统都需要打日志.</p>
+<p>系统在不同环境下对日志的配置要求是不一样的</p>
+<p>比如</p>
+<p>开发本地: 直接输出到控制台</p>
+<p>生产环境: 输出到文件或者额外的日志收集系统, 比如 graylog. </p>
+<p>(本文不探讨具体日志系统的配置)</p>
+<h2 id="spring-boot-guan-fang-fang-an">Spring Boot  官方方案</h2>
+<h3 id="profile-specific-configuration">Profile-specific Configuration</h3>
+<p><img src="http://raw.githubusercontent.com/guxingke/oss/master/blog/1545102456.png" alt="1545102456.png" />
+Logback 专属, 各环境配置归于同一文件, 通过 Spring Profile  启用. </p>
+<ul>
+<li>优点: 几乎无改动, 只需系统配置文件制定 spring.profiles.action=<profile></li>
+<li>缺点: 多环境配置混合在一起, 应用运行时应该对运行配置无感知. </li>
+</ul>
+<p>放弃.</p>
+<h3 id="pei-zhi-logging-config">配置 logging.config</h3>
+<p><img src="https://raw.githubusercontent.com/guxingke/oss/master/blog/1545102771.png" alt="1545102771.png" /></p>
+<p>需要在配置文件中指定 logging.config</p>
+<p>需要提供多个 日志配置文件</p>
+<p>e.g</p>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>
+</span><span>logging.config=classpath:logback-console.xml
+</span><span>logging.config=classpath:logback-file.xml
+</span><span>logging.config=classpath:logback-graylog.xml
+</span></code></pre>
+<p>可行.</p>
+<h2 id="luo-di">落地</h2>
+<p>采用 配置 logging.config 方案</p>
+<blockquote>
+<p>背景: 公司配置文件采用基于文件的配置中心, 通过发布系统发布到应用机器指定目录, 应用始终读取指定目录下配置文件.</p>
+</blockquote>
+<h3 id="ji-ge-wen-ti">几个问题</h3>
+<ol>
+<li>如何读取指定目录应用配置?</li>
+<li>如何保证日志初始化时能读取到指定的 config ? </li>
+</ol>
+<h3 id="guan-fang-de-wai-zhi-pei-zhi-wen-jian-jia-zai-shun-xu">官方的外置配置文件加载顺序</h3>
+<p><img src="http://raw.githubusercontent.com/guxingke/oss/master/blog/1545103791.png" alt="1545103791.png" /></p>
+<p>从文档可以看出, 默认的 Spring Boot 应用的配置文件 classpath:application.propreties 是在第 15 顺位上加载的. </p>
+<blockquote>
+<p>Application properties packaged inside your jar (application.properties and YAML variants).</p>
+</blockquote>
+<h3 id="propertysource">@PropertySource ?</h3>
+<p>即第 16 顺位的选择. </p>
+<p>然而, 事情没有这么简单.</p>
+<p>日志系统由于其特殊性, 需要尽可能早的初始化.</p>
+<blockquote>
+<p>Since logging is initialized before the ApplicationContext is created, it is not possible to control logging from @PropertySources in Spring @Configuration files. The only way to change the logging system or disable it entirely is via System properties.
+大意就是 logging system 初始化在 ApplicationContext 创建之前, 所以 @PropertySource 这种配置方式是无法影响到日志系统初始化的(毕竟事儿都干完了)</p>
+</blockquote>
+<p>此路不通</p>
+<h3 id="command-line-arguments">Command line arguments ?</h3>
+<p>顺着配置顺序往上找,  相对来讲 命令行参数 可以成本极低的应用上去. </p>
+<p>e.g</p>
+<pre data-lang="java" style="background-color:#2b303b;color:#c0c5ce;" class="language-java "><code class="language-java" data-lang="java"><span>  </span><span style="color:#b48ead;">public static</span><span> void </span><span style="color:#bf616a;">main</span><span>(</span><span style="color:#ebcb8b;">String</span><span style="color:#b48ead;">[]</span><span> args) throws </span><span style="color:#ebcb8b;">UnknownHostException </span><span>{
+</span><span>    </span><span style="color:#ebcb8b;">System</span><span>.out.</span><span style="color:#bf616a;">println</span><span>(</span><span style="color:#b48ead;">new </span><span style="color:#ebcb8b;">Date</span><span>() + &quot;</span><span style="color:#a3be8c;">  loaded...</span><span>&quot;);
+</span><span>    args = </span><span style="color:#b48ead;">new </span><span style="color:#ebcb8b;">String</span><span>[</span><span style="color:#d08770;">1</span><span>];
+</span><span>    args[</span><span style="color:#d08770;">0</span><span>] =
+</span><span>      &quot;</span><span style="color:#a3be8c;">--spring.config.location=/etc/conf/app/xxx/application.properties</span><span>&quot;;
+</span><span>
+</span><span>    </span><span style="color:#ebcb8b;">ConfigurableApplicationContext</span><span> context = </span><span style="color:#ebcb8b;">SpringApplication</span><span>.</span><span style="color:#bf616a;">run</span><span>(</span><span style="color:#ebcb8b;">Application</span><span>.</span><span style="color:#bf616a;">class</span><span>, args);
+</span><span>    </span><span style="color:#ebcb8b;">ConfigurableEnvironment</span><span> env = context.</span><span style="color:#bf616a;">getEnvironment</span><span>();
+</span><span>
+</span><span>    log.</span><span style="color:#bf616a;">info</span><span>(&quot;</span><span style="color:#96b5b4;">\n</span><span style="color:#a3be8c;">----------------------------------------------------------</span><span style="color:#96b5b4;">\n\t</span><span>&quot; +
+</span><span>        &quot;</span><span style="color:#a3be8c;">Application &#39;{}&#39; is running! Access URLs:</span><span style="color:#96b5b4;">\n\t</span><span>&quot; +
+</span><span>        &quot;</span><span style="color:#a3be8c;">Local: </span><span style="color:#96b5b4;">\t\t</span><span style="color:#a3be8c;">http://localhost:{}</span><span style="color:#96b5b4;">\n\t</span><span>&quot; +
+</span><span>        &quot;</span><span style="color:#a3be8c;">External: </span><span style="color:#96b5b4;">\t</span><span style="color:#a3be8c;">http://{}:{}</span><span style="color:#96b5b4;">\n\t</span><span>&quot; +
+</span><span>        &quot;</span><span style="color:#a3be8c;">Profile(s): </span><span style="color:#96b5b4;">\t</span><span style="color:#a3be8c;">{}</span><span style="color:#96b5b4;">\n</span><span style="color:#a3be8c;">----------------------------------------------------------</span><span>&quot;,
+</span><span>      env.</span><span style="color:#bf616a;">getProperty</span><span>(&quot;</span><span style="color:#a3be8c;">spring.application.name</span><span>&quot;),
+</span><span>      env.</span><span style="color:#bf616a;">getProperty</span><span>(&quot;</span><span style="color:#a3be8c;">server.port</span><span>&quot;),
+</span><span>      </span><span style="color:#ebcb8b;">InetAddress</span><span>.</span><span style="color:#bf616a;">getLocalHost</span><span>().</span><span style="color:#bf616a;">getHostAddress</span><span>(),
+</span><span>      env.</span><span style="color:#bf616a;">getProperty</span><span>(&quot;</span><span style="color:#a3be8c;">server.port</span><span>&quot;),
+</span><span>      env.</span><span style="color:#bf616a;">getActiveProfiles</span><span>());
+</span><span>
+</span><span>    </span><span style="color:#ebcb8b;">System</span><span>.out.</span><span style="color:#bf616a;">println</span><span>(</span><span style="color:#b48ead;">new </span><span style="color:#ebcb8b;">Date</span><span>() + &quot;</span><span style="color:#a3be8c;">  started...</span><span>&quot;);
+</span><span>  }
+</span></code></pre>
+<p>如预期, 日志系统使用了正确的指定配置. </p>
+<h3 id="gao-yi-duan-luo">告一段落</h3>
+<p>问题基本解决, 但并不优雅, hack  命令行参数, 并且存在一定的局限性. 此处暂且搁置. </p>
+<h2 id="hou-ji">后记</h2>
+<ul>
+<li>有没有更优雅的解决此问题的方法? </li>
+<li>为何 Spring Boot 的配置文件加载顺序是这般定义? </li>
+<li>Spring Boot 加载配置是如何实现的? </li>
+<li>Spring Cloud Config 等配置中心的配置是如何结合到具体应用中的? </li>
+<li>Spring Cloud Config 等配置中心的配置支持日志系统配置文件位置的配置吗? 
+...</li>
+</ul>
+<p>待后续拆而析之. </p>
+<h2 id="ref">REF</h2>
+<ul>
+<li><a href="https://docs.spring.io/spring-boot/docs/current/reference/html/boot-features-external-config.html#boot-features-external-config">Externalized Configuration</a></li>
+<li><a href="https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#boot-features-custom-log-configuration">Custom Log Configuration</a></li>
+<li><a href="https://docs.spring.io/spring-boot/docs/current/reference/html/boot-features-external-config.html#boot-features-external-config-application-property-files">Application Property Files</a></li>
+</ul>
+
+    </main>
+
+        <footer>
+            <hr text="&copy; Copyright 2022" />
+            
+            <div class="footer-social-media">
+                <a onclick="toggle_prefers_color()">Toggle Theme</a>
+                
+                    <a href="https://github.com/guxingke" target="_blank">GitHub</a>
+                
+                    <a href="https://twitter.com/@guxingke" target="_blank">Twitter</a>
+                
+            </div>
+            
+        </footer>
+    </body>
+
+    
+        <script src="https://www.guxingke.com/js/script.js"/></script>
+    
+</html>

@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta content="IE=edge" http-equiv="X-UA-Compatible"/>
+        <meta content="text/html; charset=utf-8" http-equiv="content-type"/>
+        <meta content="width=device-width, initial-scale=1" name="viewport"/>
+
+        
+        <meta name="robots" content="index,follow">
+        <meta name="googlebot" content="index,follow">
+
+        <meta name="google" content="nositelinkssearchbox">
+        <meta name="google" content="notranslate">
+        
+
+        
+
+
+
+        
+        <link href="https://www.guxingke.com/style.css" rel="stylesheet"/>
+        
+        <title>
+    JamVM 开发调试环境搭建 - 
+</title>
+    </head>
+    <body>
+        <script>
+            function evaluate_prefers_color() {
+                if(localStorage.getItem('prefers-color') === 'dark') {
+                    document.body.classList.add('dark');
+                } else if(localStorage.getItem('prefers-color') === 'light') {
+                    document.body.classList.remove('dark');
+                } else if(window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    document.body.classList.add('dark');
+                }
+            }
+            evaluate_prefers_color();
+        </script>
+        
+    <main class="article-content">
+        <p><a href="..">..</a>/dev-env-for-jamvm</p>
+        
+        <h1>JamVM 开发调试环境搭建</h1>
+        <p>Published: <time>2020-03-09</time></p>
+        
+            <div class="chips">
+                
+                    <span class="tag">jvm</span>
+                
+                    <span class="tag">jamvm</span>
+                
+                    <span class="tag">jdk8</span>
+                
+            </div>
+        
+        <hr />
+        <blockquote>
+<p>抱薪救火</p>
+</blockquote>
+<blockquote>
+<p><a href="http://jamvm.sourceforge.net/">JamVM</a> is an open-source Java Virtual Machine that aims to support the latest version of the JVM specification, while at the same time being compact and easy to understand.</p>
+</blockquote>
+<p>简单讲, JamVM 是使用 C 语言实现的精简版的 JVM. 作为入门虚拟机的项目比较适合.
+下文用来搭建 JamVM 的开发调试环境, 为进一步分析实现打基础.</p>
+<h2 id="bian-yi-jamvm">编译 JamVM</h2>
+<p>为方便起见, 个人在 Github 建了镜像, 由于原项目自2015年后便停止更新, 个人修改会直接推送到主分支.
+以下为编译步骤, 假设用户为 macos 用户.
+使用 vagrant 来管理虚拟机, 在虚拟机里编译.</p>
+<h3 id="su-zhu-ji-cao-zuo">宿主机操作</h3>
+<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#65737e;"># 安装必要依赖
+</span><span style="color:#bf616a;">brew</span><span> install vagrant
+</span><span style="color:#bf616a;">brew</span><span> install virtualbox
+</span><span style="color:#bf616a;">brew</span><span> install gdb
+</span><span>
+</span><span style="color:#65737e;"># 克隆项目
+</span><span style="color:#96b5b4;">cd </span><span>$</span><span style="color:#bf616a;">HOME
+</span><span style="color:#bf616a;">git</span><span> clone git@github.com:guxingke/jamvm.git
+</span><span>
+</span><span style="color:#65737e;"># 启动虚拟机
+</span><span style="color:#96b5b4;">cd</span><span> jamvm
+</span><span style="color:#bf616a;">vagrant</span><span> up
+</span><span style="color:#bf616a;">//</span><span> 如果初始化报错了, 执行  vagrant reload , 一般会成功.
+</span><span>
+</span></code></pre>
+<h3 id="xu-ni-ji-cao-zuo">虚拟机操作</h3>
+<h4 id="jin-ru-xu-ni-ji">进入虚拟机</h4>
+<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#bf616a;">vagrant</span><span> ssh
+</span><span style="color:#65737e;"># 正常情况下,会进入新的 shell.
+</span></code></pre>
+<h4 id="xu-ni-ji-cao-zuo-bu-zou">虚拟机操作步骤</h4>
+<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#96b5b4;">cd </span><span>$</span><span style="color:#bf616a;">HOME
+</span><span>
+</span><span style="color:#65737e;"># gnu classpath
+</span><span style="color:#bf616a;">wget </span><span>&#39;</span><span style="color:#a3be8c;">https://ftp.gnu.org/gnu/classpath/classpath-0.99.tar.gz</span><span>&#39;
+</span><span style="color:#bf616a;">tar -xvf</span><span> classpath-0.99.tar.gz
+</span><span style="color:#96b5b4;">cd</span><span> classpath-0.99/
+</span><span style="color:#b48ead;">export </span><span style="color:#bf616a;">ANTLR_JAR</span><span>=</span><span style="color:#a3be8c;">/usr/share/java/antlr4.jar
+</span><span style="color:#bf616a;">./configure --disable-gtk-peer --disable-gconf-peer --disable-plugin
+</span><span style="color:#bf616a;">make -i
+</span><span style="color:#bf616a;">sudo</span><span> make</span><span style="color:#bf616a;"> -i</span><span> install
+</span><span>
+</span><span style="color:#65737e;"># jamvm
+</span><span style="color:#96b5b4;">cd</span><span> /vagrant
+</span><span>
+</span><span style="color:#bf616a;">./autogen.sh
+</span><span style="color:#bf616a;">./configure
+</span><span style="color:#bf616a;">make
+</span><span style="color:#bf616a;">sudo</span><span> make install
+</span><span>
+</span><span style="color:#65737e;"># 验证
+</span><span style="color:#96b5b4;">echo </span><span>&quot;</span><span style="color:#a3be8c;">public class HelloWorld { public static void main(String[] args) { System.out.println(</span><span style="color:#96b5b4;">\&quot;</span><span style="color:#a3be8c;">Hello World</span><span style="color:#96b5b4;">\&quot;</span><span style="color:#a3be8c;">); } }</span><span>&quot; &gt; HelloWorld.java
+</span><span style="color:#bf616a;">javac</span><span> HelloWorld.java
+</span><span style="color:#bf616a;">/usr/local/jamvm/bin/jamvm</span><span> HelloWorld
+</span><span style="color:#65737e;"># 输出 hello world 即正常编译
+</span></code></pre>
+<h2 id="yuan-cheng-diao-shi">远程调试</h2>
+<p>本地使用 Clion 调试虚拟机内 JamVM.</p>
+<h3 id="yuan-cheng-diao-shi-xiao-guo">远程调试效果</h3>
+<p><img src="https://raw.githubusercontent.com/guxingke/oss/master/blog/1583763248.png" alt="1583763248.png" /></p>
+<h3 id="shi-xian-bu-zou">实现步骤</h3>
+<h4 id="xu-ni-ji-nei-shi-yong-gdbserver-kai-qi-jian-ting">虚拟机内使用 gdbserver 开启监听</h4>
+<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#bf616a;">gdbserver</span><span> :1234 /usr/local/jamvm/bin/jamvm HelloWorld
+</span></code></pre>
+<h4 id="clion-pei-zhi-gdb-remote-debugger">Clion 配置 gdb remote debugger</h4>
+<p><img src="https://raw.githubusercontent.com/guxingke/oss/master/blog/1583763874.png" alt="1583763874.png" /></p>
+<p>注意点1, gdb 不要使用 clion 自带的.
+注意点2, localpath 改为项目根目录</p>
+<h4 id="kai-shi-diao-shi">开始调试</h4>
+<p>与正常 Debug 一致, 断点, next, step, continue.....</p>
+<h2 id="xiao-jie">小结</h2>
+<p>记录了 macos 系统下 JamVM 的开发调试环境搭建. 如果是 linux 系统, 环境就更简单了, 不需要使用虚拟机了.</p>
+<h2 id="fan-wai">番外</h2>
+<p>个人记录, 如有错误遗漏之处, 请看官指出, 以修正.</p>
+<h2 id="can-kao">参考</h2>
+<ul>
+<li><a href="https://github.com/guxingke/jamvm">镜像项目地址</a></li>
+<li><a href="http://jamvm.sourceforge.net/">JamVM</a></li>
+<li><a href="http://ybin.cc/jvm/install-jamvm/">安装JamVM</a></li>
+<li><a href="https://blog.csdn.net/ganyao939543405/article/details/84573266">JAMVM + openjdk8 编译和调试</a></li>
+<li><a href="http://a-ray-of-sunshine.github.io/2017/01/22/JVM-jamvm%E7%BC%96%E8%AF%91%E5%AE%89%E8%A3%85/">JVM-jamvm编译安装</a></li>
+</ul>
+
+    </main>
+
+        <footer>
+            <hr text="&copy; Copyright 2022" />
+            
+            <div class="footer-social-media">
+                <a onclick="toggle_prefers_color()">Toggle Theme</a>
+                
+                    <a href="https://github.com/guxingke" target="_blank">GitHub</a>
+                
+                    <a href="https://twitter.com/@guxingke" target="_blank">Twitter</a>
+                
+            </div>
+            
+        </footer>
+    </body>
+
+    
+        <script src="https://www.guxingke.com/js/script.js"/></script>
+    
+</html>

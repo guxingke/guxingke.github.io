@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta content="IE=edge" http-equiv="X-UA-Compatible"/>
+        <meta content="text/html; charset=utf-8" http-equiv="content-type"/>
+        <meta content="width=device-width, initial-scale=1" name="viewport"/>
+
+        
+        <meta name="robots" content="index,follow">
+        <meta name="googlebot" content="index,follow">
+
+        <meta name="google" content="nositelinkssearchbox">
+        <meta name="google" content="notranslate">
+        
+
+        
+
+
+
+        
+        <link href="https://www.guxingke.com/style.css" rel="stylesheet"/>
+        
+        <title>
+    分页查询实践 - 
+</title>
+    </head>
+    <body>
+        <script>
+            function evaluate_prefers_color() {
+                if(localStorage.getItem('prefers-color') === 'dark') {
+                    document.body.classList.add('dark');
+                } else if(localStorage.getItem('prefers-color') === 'light') {
+                    document.body.classList.remove('dark');
+                } else if(window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    document.body.classList.add('dark');
+                }
+            }
+            evaluate_prefers_color();
+        </script>
+        
+    <main class="article-content">
+        <p><a href="..">..</a>/some-tips-for-paging</p>
+        
+        <h1>分页查询实践</h1>
+        <p>Published: <time>2019-08-23</time></p>
+        
+            <div class="chips">
+                
+                    <span class="tag">pattern</span>
+                
+            </div>
+        
+        <hr />
+        <blockquote>
+<p>君子不立危墙之下</p>
+</blockquote>
+<p>作为后端开发来讲, 为用户端提供分页查询是最常规的事情了, 此处简单总结一下分页查询的个人实践. </p>
+<h1 id="cong-shu-ju-ku-shuo-qi">从数据库说起</h1>
+<p>大部分情况下, 分页查询最终会映射到数据库查询, 以三个典型数据库为例, 看数据库如何支持分页查询.</p>
+<h2 id="mysql">MySql</h2>
+<pre data-lang="sql" style="background-color:#2b303b;color:#c0c5ce;" class="language-sql "><code class="language-sql" data-lang="sql"><span style="color:#b48ead;">select </span><span style="color:#bf616a;">* </span><span style="color:#b48ead;">from</span><span> user </span><span style="color:#b48ead;">limit </span><span style="color:#d08770;">100</span><span>,</span><span style="color:#d08770;">10
+</span></code></pre>
+<p>mysql 使用的 offset,limit 模式</p>
+<h2 id="mongo">Mongo</h2>
+<pre data-lang="javascript" style="background-color:#2b303b;color:#c0c5ce;" class="language-javascript "><code class="language-javascript" data-lang="javascript"><span style="color:#bf616a;">db</span><span>.</span><span style="color:#bf616a;">user</span><span>.</span><span style="color:#96b5b4;">find</span><span>().</span><span style="color:#8fa1b3;">skip</span><span>(</span><span style="color:#d08770;">100</span><span>).</span><span style="color:#8fa1b3;">limit</span><span>(</span><span style="color:#d08770;">10</span><span>)
+</span></code></pre>
+<p>mogno 同 mysql, 采用 offset, limit 模式</p>
+<h2 id="redis">Redis</h2>
+<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#bf616a;">LRANGE</span><span> user.key 100 110
+</span></code></pre>
+<p>redis 采用的也是类似 offset, limit 模式.</p>
+<h1 id="ji-chong-fen-ye-mo-shi">几种分页模式</h1>
+<h2 id="offset-limit-mo-shi">Offset, limit 模式</h2>
+<p>直观的分页模式, 可无缝映射到数据库操作.</p>
+<h2 id="page-size-mo-shi">Page , size 模式</h2>
+<p>Spring 默认分页对象. 
+最终需要翻译到 offset,limit. </p>
+<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#bf616a;">offset,limit</span><span>  = (page-1)</span><span style="color:#bf616a;">*size,</span><span> size
+</span><span>
+</span><span style="color:#bf616a;">1,10</span><span> -&gt; </span><span style="color:#d08770;">0</span><span>,10
+</span><span style="color:#bf616a;">10,10</span><span> -&gt; </span><span style="color:#d08770;">90</span><span>,10
+</span></code></pre>
+<h2 id="anchor-limit-mo-shi">Anchor, limit 模式</h2>
+<p>对于数据量大的情况下, 大的offset 会有性能问题,此处不表, 通常会考虑以下查询语句</p>
+<pre data-lang="sql" style="background-color:#2b303b;color:#c0c5ce;" class="language-sql "><code class="language-sql" data-lang="sql"><span style="color:#b48ead;">select </span><span style="color:#bf616a;">* </span><span style="color:#b48ead;">from</span><span> user </span><span style="color:#b48ead;">where</span><span> id &gt; </span><span style="color:#d08770;">1000 </span><span style="color:#b48ead;">limit </span><span style="color:#d08770;">0</span><span>,</span><span style="color:#d08770;">10
+</span></code></pre>
+<p>id &gt; 1000 , id 作为锚点(anchor, 也必须是被索引的).</p>
+<h1 id="ge-ren-shi-jian">个人实践</h1>
+<ol>
+<li>统一分页对象, 从 API -&gt; DAO, 大概长这样</li>
+</ol>
+<pre data-lang="java" style="background-color:#2b303b;color:#c0c5ce;" class="language-java "><code class="language-java" data-lang="java"><span style="color:#b48ead;">class </span><span style="color:#ebcb8b;">PageQuery </span><span style="color:#eff1f5;">{
+</span><span style="color:#eff1f5;">  </span><span style="color:#ebcb8b;">Long </span><span style="color:#eff1f5;">start; 
+</span><span style="color:#eff1f5;">  </span><span style="color:#ebcb8b;">Long </span><span style="color:#eff1f5;">limit;
+</span><span style="color:#eff1f5;">  </span><span style="color:#65737e;">// ...
+</span><span style="color:#eff1f5;">}
+</span><span>
+</span></code></pre>
+<p>为什么采用 start,limit 作为参数?
+此处用来统一offse,limit 和 anchor,limit 模式. 一般会用 long, timestamp 作为 anchor.</p>
+<ol start="2">
+<li>统一分页返回对象</li>
+</ol>
+<pre data-lang="java" style="background-color:#2b303b;color:#c0c5ce;" class="language-java "><code class="language-java" data-lang="java"><span style="color:#b48ead;">class </span><span style="color:#ebcb8b;">Page</span><span style="color:#eff1f5;">&lt;</span><span style="color:#bf616a;">T</span><span style="color:#eff1f5;">&gt; {
+</span><span style="color:#eff1f5;">  </span><span style="color:#b48ead;">private </span><span style="color:#ebcb8b;">Boolean </span><span style="color:#eff1f5;">hasMore;
+</span><span style="color:#eff1f5;">  </span><span style="color:#b48ead;">private </span><span style="color:#ebcb8b;">Long </span><span style="color:#eff1f5;">nextStart;
+</span><span style="color:#eff1f5;">  </span><span style="color:#b48ead;">private </span><span style="color:#ebcb8b;">Long </span><span style="color:#eff1f5;">limit;
+</span><span style="color:#eff1f5;">  </span><span style="color:#b48ead;">private </span><span style="color:#ebcb8b;">List</span><span style="color:#eff1f5;">&lt;</span><span style="color:#ebcb8b;">T</span><span style="color:#eff1f5;">&gt; result;
+</span><span style="color:#eff1f5;">  </span><span style="color:#b48ead;">private </span><span style="color:#ebcb8b;">Long </span><span style="color:#eff1f5;">total;  </span><span style="color:#65737e;">// 可选, 一般情况不会提供此字段.
+</span><span style="color:#eff1f5;">  </span><span style="color:#b48ead;">private </span><span style="color:#ebcb8b;">Map</span><span style="color:#eff1f5;">&lt;</span><span style="color:#ebcb8b;">String</span><span style="color:#eff1f5;">, </span><span style="color:#ebcb8b;">String</span><span style="color:#eff1f5;">&gt; ext;
+</span><span style="color:#eff1f5;">  
+</span><span style="color:#eff1f5;">  </span><span style="color:#65737e;">// ...
+</span><span style="color:#eff1f5;">}
+</span></code></pre>
+<ol start="3">
+<li>后端控制 limit.
+分页的 limit 切不可由用户端控制(运营后台可适度放开). 必须由后端控制. </li>
+</ol>
+<ul>
+<li>防止用户端随意传参</li>
+<li>防止被抓包恶意调整参数</li>
+<li>后端可针对特定业务进行透明的优化.</li>
+</ul>
+<h1 id="xiao-jie">小结</h1>
+<p>简单总结了分页查询的个人实践.</p>
+<ol>
+<li>采用 start,limit 方式分页</li>
+<li>统一分页查询对象和分页返回对象</li>
+<li>后端控制 limit 大小</li>
+</ol>
+
+    </main>
+
+        <footer>
+            <hr text="&copy; Copyright 2022" />
+            
+            <div class="footer-social-media">
+                <a onclick="toggle_prefers_color()">Toggle Theme</a>
+                
+                    <a href="https://github.com/guxingke" target="_blank">GitHub</a>
+                
+                    <a href="https://twitter.com/@guxingke" target="_blank">Twitter</a>
+                
+            </div>
+            
+        </footer>
+    </body>
+
+    
+        <script src="https://www.guxingke.com/js/script.js"/></script>
+    
+</html>

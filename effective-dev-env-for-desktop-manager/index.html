@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta content="IE=edge" http-equiv="X-UA-Compatible"/>
+        <meta content="text/html; charset=utf-8" http-equiv="content-type"/>
+        <meta content="width=device-width, initial-scale=1" name="viewport"/>
+
+        
+        <meta name="robots" content="index,follow">
+        <meta name="googlebot" content="index,follow">
+
+        <meta name="google" content="nositelinkssearchbox">
+        <meta name="google" content="notranslate">
+        
+
+        
+
+
+
+        
+        <link href="https://www.guxingke.com/style.css" rel="stylesheet"/>
+        
+        <title>
+    Macos 效率篇-切换应用和窗口管理 - 
+</title>
+    </head>
+    <body>
+        <script>
+            function evaluate_prefers_color() {
+                if(localStorage.getItem('prefers-color') === 'dark') {
+                    document.body.classList.add('dark');
+                } else if(localStorage.getItem('prefers-color') === 'light') {
+                    document.body.classList.remove('dark');
+                } else if(window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    document.body.classList.add('dark');
+                }
+            }
+            evaluate_prefers_color();
+        </script>
+        
+    <main class="article-content">
+        <p><a href="..">..</a>/effective-dev-env-for-desktop-manager</p>
+        
+        <h1>Macos 效率篇-切换应用和窗口管理</h1>
+        <p>Published: <time>2019-04-11</time></p>
+        
+            <div class="chips">
+                
+                    <span class="tag">利器</span>
+                
+                    <span class="tag">tool</span>
+                
+                    <span class="tag">phoenix</span>
+                
+            </div>
+        
+        <hr />
+        <blockquote>
+<p>如果你不能准确的估算时间, 说明你任务分解的粒度还不够细.</p>
+</blockquote>
+<h2 id="ji-ge-wen-ti">几个问题</h2>
+<p>O(n) 还是 O(1), 你切换应用的时间复杂度是多少?<br />
+还在使用 ALT+TAB 在应用间切换吗?<br />
+List 还是 Map , 如何快速的在应用间切换?<br />
+用鼠标调整应用窗口大小?<br />
+如何并列放置两个应用?</p>
+<h2 id="ge-ren-jie-jue-fang-an">个人解决方案</h2>
+<p>使用 <a href="https://github.com/kasper/phoenix">Phoenix</a> (A lightweight macOS/OS X window and app manager scriptable with JavaScript)</p>
+<h2 id="ying-yong-qie-huan">应用切换</h2>
+<p>使用快捷键切换常用应用, IDE, 浏览器, 通讯工具, NOTE, MAIL...</p>
+<ul>
+<li>ALT + 1 = IDEA</li>
+<li>ALT + q =&gt; Chrome</li>
+<li>ALT + ,  =&gt; Mail</li>
+<li>ALT + 3 =&gt; Spotify </li>
+</ul>
+<h2 id="chuang-kou-guan-li">窗口管理</h2>
+<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#bf616a;">CMD+CTRL+F</span><span> 全屏
+</span><span style="color:#bf616a;">CMD+CTRL+H</span><span> 左半屏
+</span><span style="color:#bf616a;">CMD+CTRL+L</span><span> 右半屏
+</span><span style="color:#bf616a;">CMD+CTRL+K</span><span> 上半屏 
+</span><span style="color:#bf616a;">CMD+CTRL+J</span><span> 下半屏
+</span><span style="color:#bf616a;">CMD+CTRL+G</span><span> 居中
+</span><span>
+</span><span style="color:#bf616a;">CMD+CTRL</span><span>+= </span><span style="color:#bf616a;">等比增大 
+</span><span style="color:#bf616a;">CMD+CTRL+-</span><span> 等比缩小
+</span><span>
+</span><span style="color:#bf616a;">CMD+CTRL+P</span><span> 移动当前窗口到上一个工作空间 
+</span><span style="color:#bf616a;">CMD+CTRL+N</span><span> 移动当前窗口到下一个工作空间
+</span><span>
+</span><span style="color:#65737e;"># 双显示器
+</span><span style="color:#bf616a;">ALT+SHIFT+H</span><span> 移动当前窗口到上一个显示器
+</span><span style="color:#bf616a;">ALT+SHIFT+L</span><span> 移动当前窗口到下一个显示器
+</span><span>
+</span><span style="color:#65737e;"># 同工作空间窗口切换
+</span><span style="color:#bf616a;">ALT+J</span><span> 下一个
+</span><span style="color:#bf616a;">ALT+K</span><span> 上一个
+</span><span>
+</span><span style="color:#65737e;"># 光标
+</span><span style="color:#bf616a;">ALT+M</span><span> 光标窗口居中
+</span></code></pre>
+<h2 id="ge-ren-pei-zhi-wen-jian">个人配置文件</h2>
+<p><a href="https://github.com/guxingke/dotfiles/tree/master/sync/phoenix">phoenix</a></p>
+
+    </main>
+
+        <footer>
+            <hr text="&copy; Copyright 2022" />
+            
+            <div class="footer-social-media">
+                <a onclick="toggle_prefers_color()">Toggle Theme</a>
+                
+                    <a href="https://github.com/guxingke" target="_blank">GitHub</a>
+                
+                    <a href="https://twitter.com/@guxingke" target="_blank">Twitter</a>
+                
+            </div>
+            
+        </footer>
+    </body>
+
+    
+        <script src="https://www.guxingke.com/js/script.js"/></script>
+    
+</html>

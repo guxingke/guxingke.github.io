@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta content="IE=edge" http-equiv="X-UA-Compatible"/>
+        <meta content="text/html; charset=utf-8" http-equiv="content-type"/>
+        <meta content="width=device-width, initial-scale=1" name="viewport"/>
+
+        
+        <meta name="robots" content="index,follow">
+        <meta name="googlebot" content="index,follow">
+
+        <meta name="google" content="nositelinkssearchbox">
+        <meta name="google" content="notranslate">
+        
+
+        
+
+
+
+        
+        <link href="https://www.guxingke.com/style.css" rel="stylesheet"/>
+        
+        <title>
+    Make A Lisp[1]-读取&amp;输出 - 
+</title>
+    </head>
+    <body>
+        <script>
+            function evaluate_prefers_color() {
+                if(localStorage.getItem('prefers-color') === 'dark') {
+                    document.body.classList.add('dark');
+                } else if(localStorage.getItem('prefers-color') === 'light') {
+                    document.body.classList.remove('dark');
+                } else if(window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    document.body.classList.add('dark');
+                }
+            }
+            evaluate_prefers_color();
+        </script>
+        
+    <main class="article-content">
+        <p><a href="..">..</a>/mal-step1-read-print</p>
+        
+        <h1>Make A Lisp[1]-读取&amp;输出</h1>
+        <p>Published: <time>2017-07-21</time></p>
+        
+            <div class="chips">
+                
+                    <span class="tag">pl</span>
+                
+                    <span class="tag">lisp</span>
+                
+                    <span class="tag">瞎折腾</span>
+                
+            </div>
+        
+        <hr />
+        <p>这一步应该是所有后续步骤的根基了,  文本流-&gt; token -&gt; 内部数据类型 -&gt; 可读的输出.
+REPL 的 R(read) , P(print) 基本就实现了. 后续大部分是完善 EVAL 的过程了. </p>
+<h2 id="jie-jue-fang-an">解决方案</h2>
+<p>REF: <a href="https://github.com/guxingke/mal/blob/feature/java8_temp/process/guide.md#step-1-read-and-print"> step-1-read-and-print</a>
+理论什么的,没什么高深支出, 相对于 编译原理 这种难啃的骨头, 这篇 guide 可谓简洁.
+毕竟 lisp 的代码就是 ast... , 相对来讲解析会简单很多. </p>
+<h2 id="tips">TIPS</h2>
+<p>采用 interface 作为 mal 语言的根类型. 
+所有的类型均不可变. </p>
+<h2 id="use">USE</h2>
+<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#bf616a;">make</span><span> test^java2^step1
+</span></code></pre>
+<p>稍显繁琐, 于是在 shell 里加了方法</p>
+<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#b48ead;">function </span><span style="color:#8fa1b3;">tm</span><span>() {
+</span><span>  </span><span style="color:#bf616a;">make</span><span> test^java2^step$</span><span style="color:#bf616a;">1
+</span><span>}
+</span><span>
+</span><span style="color:#bf616a;">tm</span><span> 1 </span><span style="color:#65737e;">#  like this.
+</span></code></pre>
+<h2 id="jie">结</h2>
+<p>read_form, read_list 的递归解析实现了 mal 的语法分析. 
+PR: <a href="https://github.com/guxingke/mal/pull/12">https://github.com/guxingke/mal/pull/12</a></p>
+
+    </main>
+
+        <footer>
+            <hr text="&copy; Copyright 2022" />
+            
+            <div class="footer-social-media">
+                <a onclick="toggle_prefers_color()">Toggle Theme</a>
+                
+                    <a href="https://github.com/guxingke" target="_blank">GitHub</a>
+                
+                    <a href="https://twitter.com/@guxingke" target="_blank">Twitter</a>
+                
+            </div>
+            
+        </footer>
+    </body>
+
+    
+        <script src="https://www.guxingke.com/js/script.js"/></script>
+    
+</html>

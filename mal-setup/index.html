@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta content="IE=edge" http-equiv="X-UA-Compatible"/>
+        <meta content="text/html; charset=utf-8" http-equiv="content-type"/>
+        <meta content="width=device-width, initial-scale=1" name="viewport"/>
+
+        
+        <meta name="robots" content="index,follow">
+        <meta name="googlebot" content="index,follow">
+
+        <meta name="google" content="nositelinkssearchbox">
+        <meta name="google" content="notranslate">
+        
+
+        
+
+
+
+        
+        <link href="https://www.guxingke.com/style.css" rel="stylesheet"/>
+        
+        <title>
+    Make A Lisp[setup]-起步 - 
+</title>
+    </head>
+    <body>
+        <script>
+            function evaluate_prefers_color() {
+                if(localStorage.getItem('prefers-color') === 'dark') {
+                    document.body.classList.add('dark');
+                } else if(localStorage.getItem('prefers-color') === 'light') {
+                    document.body.classList.remove('dark');
+                } else if(window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    document.body.classList.add('dark');
+                }
+            }
+            evaluate_prefers_color();
+        </script>
+        
+    <main class="article-content">
+        <p><a href="..">..</a>/mal-setup</p>
+        
+        <h1>Make A Lisp[setup]-起步</h1>
+        <p>Published: <time>2017-07-18</time></p>
+        
+            <div class="chips">
+                
+                    <span class="tag">pl</span>
+                
+                    <span class="tag">lisp</span>
+                
+                    <span class="tag">瞎折腾</span>
+                
+            </div>
+        
+        <hr />
+        <blockquote>
+<p>生命不息, 折腾不止.</p>
+</blockquote>
+<p>缘起, 在 github 上发现一个很有趣的项目, <a href="https://github.com/kanaka/mal">mal</a>, 10步即可打造一个可以 Self-Hosting(自举, 即自身解释执行自身)的 lisp 解释器. 恰巧鄙人对 编程语言 比较感兴趣, 恰巧有这么一个项目, 不如跟随先驱者的脚步, DO IT. </p>
+<span id="continue-reading"></span><h2 id="fei-hua">废话</h2>
+<p>实际上在本文书写之时, 我的 lisp 解释器已近尾声, 仅自举未曾实现, 前 8 step 已经实现(除了少量输出相关测试没有完美通过). 相较于另外一个 java 版本实现, 各有特点, 遂决定重写解释器实现, 就个中实现的个人理解稍作记录.</p>
+<h2 id="zhun-bei-gong-zuo">准备工作.</h2>
+<h3 id="pick-a-language">Pick a language</h3>
+<p>参照原项目的 <a href="https://github.com/kanaka/mal/blob/master/process/guide.md#pick-a-language">pick-a-language</a>
+挑选一门语言, -&gt; Java , 无他, 对此最熟悉. </p>
+<h3 id="getting-started">Getting started</h3>
+<p>参照 <a href="https://github.com/kanaka/mal/blob/master/process/guide.md#getting-started">getting-started</a>
+实现原则: 不依赖 mvn 等构建工具, 不依赖第三方包, 只考虑用 Jdk8 内部库, 使用内置工具进行构建执行. 
+实现思路; repo 作者推荐以 10 steps 完成此项目,  经过初步观察, 如 java, kotlin, clojure等实现 10 个步骤的实现在同一个包内, 经试验, 由于实现的过程无法避免的会改动原有步骤的依赖, 导致部分老步骤的代码需要同步修改. 鉴于此,  个人采用每个步骤使用一个新 package 来解决. 当然合理的分支策略也可以,  此处不表. </p>
+<p>PR 如下. 
+<a href="https://github.com/guxingke/mal/pull/10/files">step-setup</a></p>
+<h4 id="use">USE</h4>
+<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#96b5b4;">cd</span><span> java2
+</span><span style="color:#bf616a;">make</span><span> setup.class
+</span><span>
+</span><span style="color:#b48ead;">export </span><span style="color:#bf616a;">STEP</span><span>=&quot;</span><span style="color:#a3be8c;">setup</span><span>&quot;
+</span><span style="color:#bf616a;">./run
+</span></code></pre>
+<p>有输出即正常</p>
+<h3 id="jie">结</h3>
+<p>也就是 makefile 初次接触需要时间学习一下. </p>
+
+    </main>
+
+        <footer>
+            <hr text="&copy; Copyright 2022" />
+            
+            <div class="footer-social-media">
+                <a onclick="toggle_prefers_color()">Toggle Theme</a>
+                
+                    <a href="https://github.com/guxingke" target="_blank">GitHub</a>
+                
+                    <a href="https://twitter.com/@guxingke" target="_blank">Twitter</a>
+                
+            </div>
+            
+        </footer>
+    </body>
+
+    
+        <script src="https://www.guxingke.com/js/script.js"/></script>
+    
+</html>

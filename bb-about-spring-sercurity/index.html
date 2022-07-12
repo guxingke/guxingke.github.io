@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta content="IE=edge" http-equiv="X-UA-Compatible"/>
+        <meta content="text/html; charset=utf-8" http-equiv="content-type"/>
+        <meta content="width=device-width, initial-scale=1" name="viewport"/>
+
+        
+        <meta name="robots" content="index,follow">
+        <meta name="googlebot" content="index,follow">
+
+        <meta name="google" content="nositelinkssearchbox">
+        <meta name="google" content="notranslate">
+        
+
+        
+
+
+
+        
+        <link href="https://www.guxingke.com/style.css" rel="stylesheet"/>
+        
+        <title>
+    SpringSecurity 吐槽篇 - 
+</title>
+    </head>
+    <body>
+        <script>
+            function evaluate_prefers_color() {
+                if(localStorage.getItem('prefers-color') === 'dark') {
+                    document.body.classList.add('dark');
+                } else if(localStorage.getItem('prefers-color') === 'light') {
+                    document.body.classList.remove('dark');
+                } else if(window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    document.body.classList.add('dark');
+                }
+            }
+            evaluate_prefers_color();
+        </script>
+        
+    <main class="article-content">
+        <p><a href="..">..</a>/bb-about-spring-sercurity</p>
+        
+        <h1>SpringSecurity 吐槽篇</h1>
+        <p>Published: <time>2018-09-29</time></p>
+        
+            <div class="chips">
+                
+                    <span class="tag">security</span>
+                
+                    <span class="tag">spring</span>
+                
+                    <span class="tag">bb</span>
+                
+            </div>
+        
+        <hr />
+        <blockquote>
+<p>Keep it simple, stupid</p>
+</blockquote>
+<span id="continue-reading"></span><h2 id="pei-zhi-fu-za-nan-yi-li-jie">配置复杂难以理解</h2>
+<h3 id="yi-yi-duan-pei-zhi-wei-li">以一段配置为例</h3>
+<pre data-lang="java" style="background-color:#2b303b;color:#c0c5ce;" class="language-java "><code class="language-java" data-lang="java"><span>  @</span><span style="color:#bf616a;">Override
+</span><span>  </span><span style="color:#b48ead;">public</span><span> void </span><span style="color:#bf616a;">configure</span><span>(</span><span style="color:#ebcb8b;">WebSecurity</span><span> web) {
+</span><span>    web.</span><span style="color:#bf616a;">ignoring</span><span>()
+</span><span>      .</span><span style="color:#bf616a;">antMatchers</span><span>(</span><span style="color:#ebcb8b;">HttpMethod</span><span>.</span><span style="color:#d08770;">OPTIONS</span><span>, &quot;</span><span style="color:#a3be8c;">/**</span><span>&quot;)
+</span><span>      .</span><span style="color:#bf616a;">antMatchers</span><span>(&quot;</span><span style="color:#a3be8c;">/app/**/*.{js,html}</span><span>&quot;)
+</span><span>      .</span><span style="color:#bf616a;">antMatchers</span><span>(&quot;</span><span style="color:#a3be8c;">/i18n/**</span><span>&quot;)
+</span><span>      .</span><span style="color:#bf616a;">antMatchers</span><span>(&quot;</span><span style="color:#a3be8c;">/swagger-ui/index.html</span><span>&quot;)
+</span><span>      .</span><span style="color:#bf616a;">antMatchers</span><span>(&quot;</span><span style="color:#a3be8c;">/test/**</span><span>&quot;);
+</span><span>  }
+</span><span>
+</span><span>  @</span><span style="color:#bf616a;">Override
+</span><span>  </span><span style="color:#b48ead;">protected</span><span> void </span><span style="color:#bf616a;">configure</span><span>(</span><span style="color:#ebcb8b;">HttpSecurity</span><span> http) throws </span><span style="color:#ebcb8b;">Exception </span><span>{
+</span><span>    http
+</span><span>      .</span><span style="color:#bf616a;">exceptionHandling</span><span>()
+</span><span>      .</span><span style="color:#bf616a;">authenticationEntryPoint</span><span>(</span><span style="color:#bf616a;">http401UnauthorizedEntryPoint</span><span>())
+</span><span>      .</span><span style="color:#bf616a;">and</span><span>()
+</span><span>      .</span><span style="color:#bf616a;">csrf</span><span>()
+</span><span>      .</span><span style="color:#bf616a;">disable</span><span>()
+</span><span>      .</span><span style="color:#bf616a;">headers</span><span>()
+</span><span>      .</span><span style="color:#bf616a;">disable</span><span>()
+</span><span>      .</span><span style="color:#bf616a;">sessionManagement</span><span>()
+</span><span>      .</span><span style="color:#bf616a;">sessionCreationPolicy</span><span>(</span><span style="color:#ebcb8b;">SessionCreationPolicy</span><span>.</span><span style="color:#d08770;">STATELESS</span><span>)
+</span><span>      .</span><span style="color:#bf616a;">and</span><span>()
+</span><span>      .</span><span style="color:#bf616a;">authorizeRequests</span><span>()
+</span><span>      .</span><span style="color:#bf616a;">antMatchers</span><span>(&quot;</span><span style="color:#a3be8c;">/auth/**</span><span>&quot;).</span><span style="color:#bf616a;">permitAll</span><span>()
+</span><span>      .</span><span style="color:#bf616a;">antMatchers</span><span>(&quot;</span><span style="color:#a3be8c;">/actuator/**</span><span>&quot;).</span><span style="color:#bf616a;">access</span><span>(actuatorExp)
+</span><span>      .</span><span style="color:#bf616a;">antMatchers</span><span>(&quot;</span><span style="color:#a3be8c;">/user/register/</span><span>&quot;).</span><span style="color:#bf616a;">hasAuthority</span><span>(</span><span style="color:#ebcb8b;">AuthoritiesConstants</span><span>.</span><span style="color:#d08770;">API_REGISTER</span><span>.</span><span style="color:#bf616a;">getValue</span><span>())
+</span><span>      .</span><span style="color:#bf616a;">antMatchers</span><span>(&quot;</span><span style="color:#a3be8c;">/**</span><span>&quot;).</span><span style="color:#bf616a;">hasAuthority</span><span>(</span><span style="color:#ebcb8b;">AuthoritiesConstants</span><span>.</span><span style="color:#d08770;">USER</span><span>.</span><span style="color:#bf616a;">getValue</span><span>())
+</span><span>      .</span><span style="color:#bf616a;">antMatchers</span><span>(&quot;</span><span style="color:#a3be8c;">/pick/**</span><span>&quot;).</span><span style="color:#bf616a;">hasAuthority</span><span>(</span><span style="color:#ebcb8b;">AuthoritiesConstants</span><span>.</span><span style="color:#d08770;">PICKER</span><span>.</span><span style="color:#bf616a;">getValue</span><span>())
+</span><span>      .</span><span style="color:#bf616a;">and</span><span>()
+</span><span>      .</span><span style="color:#bf616a;">securityContext</span><span>()
+</span><span>      .</span><span style="color:#bf616a;">securityContextRepository</span><span>(</span><span style="color:#b48ead;">new </span><span style="color:#ebcb8b;">NullSecurityContextRepository</span><span>())
+</span><span>      .</span><span style="color:#bf616a;">and</span><span>()
+</span><span>      .</span><span style="color:#bf616a;">apply</span><span>(</span><span style="color:#bf616a;">securityConfigurerAdapter</span><span>());
+</span><span>
+</span><span>    </span><span style="color:#b48ead;">if </span><span>(verificationSecurityConfigurer != </span><span style="color:#d08770;">null</span><span>) {
+</span><span>      http.</span><span style="color:#bf616a;">apply</span><span>(verificationSecurityConfigurer);
+</span><span>    }
+</span><span>  }
+</span></code></pre>
+<p>WebSecurity 与 HttpSecurity 什么关系, 能不能统一到一起配置? </p>
+<p>HttpSeecurity 的配置从上到下没有层次感, 需要了解足够多的内部配置信息才能准确配置.</p>
+<p>&quot;Explicit is better than implicit&quot;, Spring Security  默认启用的配置10+, 都是隐式配置, 但是需要显式的 disable .</p>
+<h3 id="you-hua-yong-hu-ti-yan">优化用户体验?</h3>
+<p>下面也许更好</p>
+<pre data-lang="java" style="background-color:#2b303b;color:#c0c5ce;" class="language-java "><code class="language-java" data-lang="java"><span>    http
+</span><span>      .</span><span style="color:#bf616a;">apply</span><span>(sessionConfigurer)
+</span><span>      .</span><span style="color:#bf616a;">apply</span><span>(csryConfigurer)
+</span><span>      .</span><span style="color:#bf616a;">apply</span><span>(contextConfigurer)
+</span><span>      .</span><span style="color:#bf616a;">apply</span><span>(authorizeConfigurer)
+</span><span>      .</span><span style="color:#bf616a;">apply</span><span>(customConfigurer)
+</span></code></pre>
+<ul>
+<li>显式配置, 提供默认配置的实现, 但不默认配置.</li>
+<li>具体配置由配置类实现, 不在顶层配置.</li>
+</ul>
+<h2 id="shi-xian-fu-za">实现复杂</h2>
+<p>实现获取 Token, 验证, 授权, 访问控制使用的都是 Filter. 而且 Filter 还是 Servlet 规范的  Filter ,  对使用者而言, 不免混淆.</p>
+<p>Filter 过于强大(强大到可以基于 FIlter 实现 Struts2 框架 ), 而 Spring Security 并未对此设限.</p>
+<p>以异常处理来做业务逻辑. 这个也是不得已为之, 毕竟基于 Filter</p>
+<pre data-lang="java" style="background-color:#2b303b;color:#c0c5ce;" class="language-java "><code class="language-java" data-lang="java"><span>    </span><span style="color:#b48ead;">public</span><span> void </span><span style="color:#bf616a;">doFilter</span><span>(</span><span style="color:#ebcb8b;">ServletRequest</span><span> request, </span><span style="color:#ebcb8b;">ServletResponse</span><span> response,
+</span><span>                         </span><span style="color:#ebcb8b;">FilterChain</span><span> chain)
+</span><span>            throws </span><span style="color:#ebcb8b;">IOException</span><span>, </span><span style="color:#ebcb8b;">ServletException</span><span>;
+</span></code></pre>
+<p>Filter 的核心方法 doFilter 是没有返回值的
+以异常处理做业务处理的问题, 就是重拾万恶的GOTO 语句</p>
+<h2 id="end">END</h2>
+<p>当然, Spring Security 被广泛使用的原因在于它确实可以满足用户的安全需求, 尽管并不好用. 有没有更简单的安全框架, 也许 Shiro 是个不错的选择, 但个人并没有进一步了解, 此处不表. </p>
+<p>由于 Spring Security 是 Spring 官方默认实现, 在很长的一段时间内, 依然会是主流, 如果不能反抗, 那就享受吧.</p>
+
+    </main>
+
+        <footer>
+            <hr text="&copy; Copyright 2022" />
+            
+            <div class="footer-social-media">
+                <a onclick="toggle_prefers_color()">Toggle Theme</a>
+                
+                    <a href="https://github.com/guxingke" target="_blank">GitHub</a>
+                
+                    <a href="https://twitter.com/@guxingke" target="_blank">Twitter</a>
+                
+            </div>
+            
+        </footer>
+    </body>
+
+    
+        <script src="https://www.guxingke.com/js/script.js"/></script>
+    
+</html>

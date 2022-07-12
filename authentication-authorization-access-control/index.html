@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta content="IE=edge" http-equiv="X-UA-Compatible"/>
+        <meta content="text/html; charset=utf-8" http-equiv="content-type"/>
+        <meta content="width=device-width, initial-scale=1" name="viewport"/>
+
+        
+        <meta name="robots" content="index,follow">
+        <meta name="googlebot" content="index,follow">
+
+        <meta name="google" content="nositelinkssearchbox">
+        <meta name="google" content="notranslate">
+        
+
+        
+
+
+
+        
+        <link href="https://www.guxingke.com/style.css" rel="stylesheet"/>
+        
+        <title>
+    认证,授权,访问控制 - 
+</title>
+    </head>
+    <body>
+        <script>
+            function evaluate_prefers_color() {
+                if(localStorage.getItem('prefers-color') === 'dark') {
+                    document.body.classList.add('dark');
+                } else if(localStorage.getItem('prefers-color') === 'light') {
+                    document.body.classList.remove('dark');
+                } else if(window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    document.body.classList.add('dark');
+                }
+            }
+            evaluate_prefers_color();
+        </script>
+        
+    <main class="article-content">
+        <p><a href="..">..</a>/authentication-authorization-access-control</p>
+        
+        <h1>认证,授权,访问控制</h1>
+        <p>Published: <time>2018-09-28</time></p>
+        
+            <div class="chips">
+                
+                    <span class="tag">security</span>
+                
+                    <span class="tag">spring</span>
+                
+                    <span class="tag">demo</span>
+                
+            </div>
+        
+        <hr />
+        <blockquote>
+<p>但只有第三种方法有效</p>
+</blockquote>
+<span id="continue-reading"></span><h2 id="ren-zheng-authentication">认证 (Authentication)</h2>
+<h3 id="ping-zheng">凭证</h3>
+<ul>
+<li>username, passwd</li>
+<li>telephone, validateCode</li>
+<li>email,validateCode</li>
+</ul>
+<h3 id="xiao-yan-authenticationprovider">校验(AuthenticationProvider)</h3>
+<p>确认凭证是否有效</p>
+<h2 id="shou-quan-authorization">授权 (Authorization)</h2>
+<p>认证通过后赋予给用户的的权限集合</p>
+<h2 id="fang-wen-kong-zhi-access-control">访问控制 (Access Control)</h2>
+<p>根据用户权限和请求上下文, 判定资源能否被当前用户访问.</p>
+<h2 id="jian-dan-de-an-quan-mo-kuai">简单的安全模块</h2>
+<pre data-lang="java" style="background-color:#2b303b;color:#c0c5ce;" class="language-java "><code class="language-java" data-lang="java"><span style="color:#65737e;">// 请求上文  
+</span><span>context = </span><span style="color:#bf616a;">AuthContext</span><span>(request)
+</span><span style="color:#65737e;">// 获取所有的认证 Token
+</span><span style="color:#ebcb8b;">List</span><span>&lt;</span><span style="color:#ebcb8b;">Token</span><span>&gt; tokens = </span><span style="color:#bf616a;">parseToken</span><span>(context)
+</span><span style="color:#65737e;">// 获取认证成功的用户
+</span><span style="color:#ebcb8b;">List</span><span>&lt;</span><span style="color:#ebcb8b;">User</span><span>&gt; authenticatedUsers = </span><span style="color:#bf616a;">doAuth</span><span>(tokens)
+</span><span style="color:#65737e;">// 判定权限
+</span><span style="color:#b48ead;">boolean</span><span> access = </span><span style="color:#bf616a;">decide</span><span>(context, authenticatedUsers)
+</span></code></pre>
+<h2 id="jian-dan-de-shi-xian">简单的实现</h2>
+<p><a href="https://github.com/guxingke/demo/tree/master/sb-demo/sb-simple-security">sb-simple-security</a></p>
+
+    </main>
+
+        <footer>
+            <hr text="&copy; Copyright 2022" />
+            
+            <div class="footer-social-media">
+                <a onclick="toggle_prefers_color()">Toggle Theme</a>
+                
+                    <a href="https://github.com/guxingke" target="_blank">GitHub</a>
+                
+                    <a href="https://twitter.com/@guxingke" target="_blank">Twitter</a>
+                
+            </div>
+            
+        </footer>
+    </body>
+
+    
+        <script src="https://www.guxingke.com/js/script.js"/></script>
+    
+</html>
